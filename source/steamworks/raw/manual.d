@@ -708,7 +708,7 @@ extern (C++) abstract class CCallbackBase
     abstract void Run(void* pvParam, bool bIOFailure, SteamAPICall_t hSteamAPICall) nothrow;
 
     /// The callback identifier this object is registered for.
-    final int GetICallback() const @safe pure nothrow @nogc
+    final int GetICallback() @safe pure nothrow @nogc
     {
         return m_iCallback;
     }
