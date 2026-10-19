@@ -1,92 +1,139 @@
 # steamworks.d
 
-D bindings for the [Steamworks SDK](https://partner.steamgames.com/doc/sdk) flat C API, generated from
-SDK 1.65 and checked against the SDK headers for every platform Valve ships `libsteam_api` for.
+D bindings for the [Steamworks SDK](https://partner.steamgames.com/doc/sdk) flat C API: every
+interface, method, callback, struct, enum and constant of **Steamworks SDK 1.64**, generated from
+the SDK and verified against its headers and libraries on every platform Valve ships, with a thin
+D layer for initialization, callback dispatch and conversions on top.
 
-- **Complete.** Every function the SDK headers declare and `libsteam_api` exports (1047), all 33
+- **Complete.** All 1047 functions the SDK headers declare and `libsteam_api` exports, all 33
   interfaces with their accessors and version strings, 196 callback structs, the plain structs,
   112 enums, 163 constants and 78 typedefs. Nothing is a demo subset.
 - **Faithful.** Valve's C and C++ names throughout, so the
   [Steamworks API reference](https://partner.steamgames.com/doc/api) applies as written.
-- **ABI-checked.** A clang probe measures every size, member alignment, field offset, enumerator,
-  constant, flat function signature and interface version string on macOS (arm64, x86_64), Windows
-  (x64, x86), Linux (x86_64, i686, arm64) and Android (arm64); the bindings are verified against
-  all of them at compile time with dmd and ldc2. Independently, dmd and ldc2 describe every D
-  declaration for each target and clang checks the description against the headers (exact field
-  and signature types, layouts, values, vtable order, completeness in both directions), and the
-  symbols the linked configuration references are checked against each platform's library.
-- **Two linking modes.** Load `libsteam_api` at runtime (the default) or link it directly, with
-  the same code.
+- **ABI-verified.** Sizes, alignments, field offsets, enumerator and constant values, function
+  signatures, vtable layouts and symbol names are checked against the SDK headers (with clang) and
+  libraries for macOS (arm64, x86_64), Windows (x64, x86), Linux (x86_64, i686, arm64) and
+  Android (arm64), with dmd and ldc2. See [ABI verification](#abi-verification).
+- **Two linking modes.** Load `libsteam_api` at run time (the default, so a game can run without
+  it) or link it directly, with the same code.
 - **Standalone.** No dependencies beyond druntime and Phobos; every raw function is
   `nothrow @nogc`.
-- **A thin D layer** on top: initialization that reports Steam's error message, the
-  `SteamUser()`-style accessors, a per-frame callback and call-result dispatcher (with a
-  `nothrow @nogc` variant), delegate-based server browser responses, and Steam ID and string
-  conversions. The raw API stays fully usable alongside it.
+- **A thin D layer**: initialization that reports Steam's error message, the `SteamUser()`-style
+  accessors, a per-frame callback and call-result dispatcher (with a `nothrow @nogc` variant),
+  delegate-based server browser responses, and Steam ID, network address and string conversions.
 
-`steamworks.raw` is the complete flat API, usable directly by anyone who knows the C API; the
-D layer only removes the boilerplate around it.
+This project is not affiliated with or endorsed by Valve Corporation. See [License](#license).
+
+## Contents
+
+- [Installation](#installation)
+- [Getting the Steamworks SDK](#getting-the-steamworks-sdk)
+- [Quick start](#quick-start)
+- [Raw API and D layer](#raw-api-and-d-layer)
+- [Examples](#examples)
+- [Platform notes](#platform-notes)
+- [How the C API maps to D](#how-the-c-api-maps-to-d)
+- [Modules](#modules)
+- [Deliberately not bound](#deliberately-not-bound)
+- [Development](#development)
+- [License](#license)
 
 ## Installation
+
+Add the package to `dub.sdl`:
 
 ```sdl
 dependency "steamworks" version="~>0.1.0"
 ```
 
-(Until the package is published on code.dlang.org, use a path or git dependency.)
+or `dub.json`:
 
-The Steamworks SDK itself is not included. Download it from the
-[Steamworks partner site](https://partner.steamgames.com/downloads/list) and ship the library for
-each platform next to your executable:
+```json
+"dependencies": { "steamworks": "~>0.1.0" }
+```
 
-| Platform        | File (from `sdk/redistributable_bin`) |
-| --------------- | ------------------------------------- |
-| Windows x64     | `win64/steam_api64.dll`               |
-| Windows x86     | `steam_api.dll`                       |
-| macOS           | `osx/libsteam_api.dylib` (universal)  |
-| Linux x86_64    | `linux64/libsteam_api.so`             |
-| Linux i686      | `linux32/libsteam_api.so`             |
-| Linux arm64     | `linuxarm64/libsteam_api.so`          |
-| Android arm64   | `androidarm64/libsteam_api.so`        |
+(Until the package is published on code.dlang.org, use a path or git dependency.) Compilers:
+dmd and LDC, recent releases (CI uses the latest of each). The package has two configurations.
 
-## Configurations
+### `dynamic` (default)
 
-**`dynamic`** (default): every flat function is a `__gshared` function pointer that
-`loadSteamworks()` binds at runtime. Nothing links against `libsteam_api`, so the package builds
-without the SDK present, and a game can run (and fall back gracefully) where the library is
-missing, such as DRM-free builds of the same binary. This is the recommended mode.
+Every flat function is a `__gshared` function pointer that `loadSteamworks()` binds at run time.
+Nothing links against `libsteam_api`, so the package builds without the SDK, and a game can run,
+and fall back gracefully, where the library is missing (such as a DRM-free build of the same
+binary). This is the recommended mode.
 
 ```d
 import steamworks;
 
-const status = loadSteamworks();  // next to the executable, then the system search path
-// or loadSteamworks("path/to/libsteam_api.so")
-if (status != SteamworksLoadStatus.success)
-    writeln("no Steam: ", steamworksLoadError());
+if (loadSteamworks() != SteamworksLoadStatus.success)  // next to the executable, then the system search path
+    writeln("no Steam: ", steamworksLoadError());       // or loadSteamworks("path/to/libsteam_api.so")
 ```
 
-`loadSteamworks` returns `success`, `libraryNotFound`, or `missingSymbols` (an older library:
-the functions it has are bound and the rest stay `null`; see `steamworksMissingSymbolCount`).
-`unloadSteamworks()` releases the library after `SteamAPI_Shutdown()`.
+`loadSteamworks` returns `success`, `libraryNotFound`, or `missingSymbols` (an older library: the
+functions it has are bound and the rest stay `null`; see `steamworksMissingSymbolCount`).
+`unloadSteamworks()` releases the library after `SteamAPI_Shutdown()`. Calling a flat function
+before `loadSteamworks()` succeeds dereferences a null pointer; the D layer's `steamInit` and
+friends check for this and report an error instead. Loading is not thread-safe: load once at
+start-up, before other threads use Steam.
 
-**`linked`**: functions are plain `extern (C)` declarations and the library is linked at build
-time. Select it and tell the linker where the library is:
+### `linked`
+
+Functions are plain `extern (C)` declarations and the library is linked at build time. Select the
+configuration and tell the linker where the library is:
 
 ```sdl
 dependency "steamworks" version="~>0.1.0"
 subConfiguration "steamworks" "linked"
-lflags "-L/path/to/sdk/redistributable_bin/linux64" platform="linux"
+lflags "-L/path/to/sdk/redistributable_bin/linux64" "-rpath=$$ORIGIN" platform="linux-x86_64"
 lflags "-L/path/to/sdk/redistributable_bin/osx" platform="osx"
 lflags "/LIBPATH:C:\\path\\to\\sdk\\redistributable_bin\\win64" platform="windows-x86_64"
 ```
 
-In this mode `loadSteamworks()` simply returns `success`, so code written for the dynamic mode
-works unchanged. On macOS the library's install name is `@loader_path/libsteam_api.dylib`, so it
-must sit next to the executable at runtime; on Linux add an rpath such as `$ORIGIN`.
+The package links `steam_api` (`steam_api64.lib` on 64-bit Windows). In this mode
+`loadSteamworks()` simply returns `success`, so code written for the dynamic mode works unchanged;
+code that needs to tell the modes apart can test `version (SteamworksDynamic)`.
 
-## Usage
+## Getting the Steamworks SDK
+
+The SDK and its redistributable libraries are **not included** in this repository or package.
+Download the SDK from the [Steamworks partner site](https://partner.steamgames.com/downloads/list)
+(a Steamworks account is required) and ship the library for each platform next to your
+executable:
+
+| Platform      | File (from `sdk/redistributable_bin`) |
+| ------------- | ------------------------------------- |
+| Windows x64   | `win64/steam_api64.dll`               |
+| Windows x86   | `steam_api.dll`                       |
+| macOS         | `osx/libsteam_api.dylib` (universal)  |
+| Linux x86_64  | `linux64/libsteam_api.so`             |
+| Linux i686    | `linux32/libsteam_api.so`             |
+| Linux arm64   | `linuxarm64/libsteam_api.so`          |
+| Android arm64 | `androidarm64/libsteam_api.so`        |
+
+The linked configuration also needs the import library `win64/steam_api64.lib` (or
+`steam_api.lib`) on Windows at build time.
+
+**Ship the library from SDK 1.64**, the version these bindings are generated from. The flat API
+is tied to its SDK release: a different release's `libsteam_api` exports other versioned
+accessors (SDK 1.65 replaces `SteamAPI_SteamUtils_v010` with `_v011`, for example) and can change
+function signatures. With the dynamic configuration a mismatched library shows up as
+`SteamworksLoadStatus.missingSymbols`; with the linked configuration as unresolved symbols. To
+move to another SDK release, [regenerate](#regenerating-for-a-new-sdk) the bindings.
+
+For working on this repository, `tools/fetch-sdk.sh` puts an SDK into `./sdk` (gitignored): it
+copies the official SDK from `$STEAMWORKS_SDK` if set, and otherwise downloads the copy of the SDK
+1.64 headers and redistributables in the `steamworks-sys` crate on crates.io, verified against
+the index checksum. Use the official download for anything you ship.
+
+## Quick start
+
+During development, put a `steam_appid.txt` containing your app ID in the working directory (480,
+Valve's Spacewar sample, works for testing). It lets `SteamAPI_Init` work when the game is not
+launched from Steam; do not ship it. The Steam client must be running and logged in.
 
 ```d
+import core.thread : Thread;
+import core.time : msecs;
 import std.stdio : writefln, writeln;
 import steamworks;
 
@@ -108,26 +155,32 @@ void main()
         me.toSteam3String);           // "[U:1:22202]"
 
     auto steam = CallbackDispatcher.forClient();
+
+    // A callback: delivered every time Steam posts it, until unregistered.
     auto token = steam.register((ref const PersonaStateChange_t e) {
         writefln("%s changed", CSteamID(e.m_ulSteamID).toSteam3String);
     });
+
+    // A call result: the result type comes from the function's attribute.
     steam.call!SteamAPI_ISteamUserStats_FindLeaderboard(SteamUserStats(), "Feet Traveled")
         .then((ref r, ioFailure) {    // r is a LeaderboardFindResult_t
             if (!ioFailure && r.m_bLeaderboardFound) { /* ... */ }
         });
 
+    // Achievements and stats: Steam fetches the user's stats during
+    // initialization (UserStatsReceived_t); StoreStats uploads changes.
+    steam.register((ref const UserStatsStored_t e) { writeln("stored: ", e.m_eResult); });
+    if (SteamAPI_ISteamUserStats_SetAchievement(SteamUserStats(), "ACH_WIN_ONE_GAME"))
+        SteamAPI_ISteamUserStats_StoreStats(SteamUserStats());
+
     foreach (frame; 0 .. 600)
     {
         steam.runFrame();             // callbacks and call results are delivered here
-        // render a frame
+        Thread.sleep(16.msecs);       // render a frame
     }
     steam.unregister(token);
 }
 ```
-
-During development put a `steam_appid.txt` with your app ID (480, Spacewar, for testing) in the
-working directory. `examples/dispatcher` is a complete program; `examples/manual-dispatch` does
-the same with the raw API only.
 
 ### Initialization
 
@@ -139,8 +192,7 @@ queryPort, serverMode, version)` and `steamGameServerShutdown()`. After a succes
 initialization both select manual dispatch (`SteamAPI_ManualDispatch_Init`, which steam_api.h
 requires after `SteamAPI_Init`); pass `SteamDispatchMode.automatic` to keep Steam's own
 `SteamAPI_RunCallbacks` dispatch. `steamRestartAppIfNecessary(appID)` wraps
-`SteamAPI_RestartAppIfNecessary`. With the dynamic configuration, calling these before
-`loadSteamworks()` reports an error rather than crashing.
+`SteamAPI_RestartAppIfNecessary`: call it first in `main` and exit when it returns true.
 
 The accessors carry their C++ names: `SteamUser()`, `SteamFriends()`, `SteamMatchmaking()`,
 `SteamNetworkingSockets()`, ..., and `SteamGameServer()`, `SteamGameServerNetworkingSockets()`,
@@ -153,9 +205,10 @@ initialization.
 `forGameServer()` uses `SteamGameServer_GetHSteamPipe()` (a process that is both needs one of
 each). Call `runFrame()` once per frame.
 
-- `register!T(handler)` or `register(handler)` (type inferred from a `(ref const T)` parameter)
-  subscribes a delegate or function pointer to callback struct `T`; it returns a `CallbackToken`
-  for `unregister`. `registerRaw` receives Steam's `CallbackMsg_t` for one id or for all.
+- `register!T(handler)` or `register(handler)` (type inferred from a `(ref const T e)` parameter;
+  the parameter needs a name) subscribes a delegate or function pointer to callback struct `T`;
+  it returns a `CallbackToken` for `unregister`. `registerRaw` receives Steam's `CallbackMsg_t`
+  for one id or for all.
 - `callResult!T(call, handler)` waits for the `SteamAPICall_t` returned by an asynchronous
   function; the handler gets `(ref const T result, bool ioFailure)` once. `call!fn(args).then(...)`
   makes the call and takes `T` from the function's `SteamCallResult` attribute. `cancel` stops
@@ -166,6 +219,8 @@ each). Call `runFrame()` once per frame.
   still run, the callback is freed, and the exception (chained with any others) leaves
   `runFrame`; queued callbacks wait for the next frame. `NogcCallbackDispatcher` accepts only
   `nothrow @nogc` handlers, which makes `runFrame` `nothrow @nogc`.
+- The dispatcher is single-threaded and not copyable; `call!fn(...).then` keeps a pointer to it,
+  so keep it in one place (a local in the main loop, a field of a class).
 - The dispatcher reads from a `CallbackSource` interface, Steam's manual dispatch by default;
   tests inject synthetic callbacks and call results through it.
 
@@ -180,22 +235,81 @@ each). Call `runFrame()` once per frame.
   `toSteam2String` (`"STEAM_1:0:11101"`) and `parseSteamID` (decimal, Steam3 or Steam2 text).
 - `steamworks.networking`: `ipAddrToString`, `parseIPAddr`, `identityToString`,
   `parseIdentity` and buffer-based `formatIPAddr` / `formatIdentity`, using Steam's own
-  formatting (available once Steam is initialized).
+  formatting. They need an initialized Steam (they return empty text or false before); so do the
+  raw `SteamAPI_SteamNetworkingIPAddr_ToString`/`ParseString` and `SteamNetworkingIdentity`
+  equivalents, which crash without it.
 - `steamworks.strings`: `fromCString` borrows a returned `const(char)*` or a `char[N]` field as a
   slice, `idupCString` copies it, and `tempCString` makes a NUL-terminated copy of a D string
   without the GC.
 
+## Raw API and D layer
+
+`steamworks.raw` is the complete flat API exactly as Valve declares it: anyone who knows the C API
+(or reads Valve's documentation) can use it directly, and nothing in the D layer is needed to
+reach any feature. The D layer (`steamworks.lifecycle`, `.accessors`, `.dispatch`,
+`.matchmaking`, `.steamid`, `.networking`, `.strings`) only removes boilerplate: error messages
+from initialization, the dispatch loop, delegate-based C++ callback objects, and text
+conversions. `import steamworks;` imports both; import `steamworks.raw` alone for the bare API.
+The two mix freely: the dispatcher hands handlers the raw callback structs, and the accessors
+return the raw interface pointers.
+
+## Examples
+
+Each directory under `examples/` is a dub package (`dub build --root=examples/<name>`, or
+`dub run` from inside it). They build without Steam and, when Steam is not running, report why
+initialization failed and exit. Each copies the SDK's library next to its executable, so they
+need the SDK in `./sdk` (`tools/fetch-sdk.sh`); run them with a `steam_appid.txt` in the working
+directory.
+
+| Example                                         | Shows                                                                                       |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| [`dispatcher`](examples/dispatcher)             | Minimal program: initialization, a callback and two call results with the dispatcher.       |
+| [`manual-dispatch`](examples/manual-dispatch)   | The same with the raw API only: `SteamAPI_ManualDispatch_*` and `GetAPICallResult`.          |
+| [`achievements`](examples/achievements)         | Achievements, stats and global percentages; leaderboards through chained call results.     |
+| [`matchmaking`](examples/matchmaking)           | Lobbies (create, search with filters, join, chat, member changes) and the server browser.  |
+| [`networking`](examples/networking)             | `ISteamNetworkingSockets`: loopback socket pair, P2P listen socket and poll group, connect. |
+| [`game-server`](examples/game-server)           | A dedicated server: game server init, anonymous logon, server browser rules, auth tickets. |
+
+## Platform notes
+
+- **Struct packing.** Steam's callback structs are packed to 4 bytes on Linux, macOS and Android
+  (`VALVE_CALLBACK_PACK_SMALL`) and to 8 bytes on Windows (`VALVE_CALLBACK_PACK_LARGE`). The
+  bindings reproduce both with `align(callbackAlign!T)` on every field, chosen by `version`, so
+  the same source has the right layout everywhere; `steamworks.raw.platform` exposes
+  `VALVE_CALLBACK_PACK`. Byte-packed structs use `align(1)`.
+- **Windows.** Ship `steam_api64.dll` (or `steam_api.dll` for 32-bit) next to the executable;
+  `loadSteamworks()` looks there first, then on the standard DLL search path. The linked
+  configuration links the import library `steam_api64.lib`; add its directory with
+  `lflags "/LIBPATH:..."` or the `LIB` environment variable. C++ callback interfaces follow MSVC's
+  vtable order, which the D compilers reproduce for `extern (C++)` classes.
+- **macOS.** `libsteam_api.dylib` is universal (arm64 and x86_64). Its install name is
+  `@loader_path/libsteam_api.dylib`, so a linked executable finds it next to itself; inside an
+  app bundle put it in `Contents/MacOS` next to the executable (or adjust with
+  `install_name_tool`). For test binaries elsewhere, `DYLD_LIBRARY_PATH` pointing at the SDK's
+  `osx` directory works. `loadSteamworks()` looks next to the executable, then on the dyld search
+  path.
+- **Linux.** The library is `libsteam_api.so` for each architecture. Ship it next to the
+  executable and, for the linked configuration, link with an rpath of `$ORIGIN`
+  (`lflags "-rpath=$$ORIGIN"` in dub) so it is found there; `LD_LIBRARY_PATH` works for
+  development. `loadSteamworks()` looks next to the executable first, then on the loader's search
+  path. The dynamic configuration links `libdl`.
+- **Steam Deck / Proton.** The Windows build running under Proton uses the Windows DLL; the
+  native Linux build uses `linux64`.
+- **Game servers** need `steamclient` (`steamclient.so`, `steamclient.dll`), installed with the
+  Steam client or SteamCMD, but no running Steam client.
+
 ## How the C API maps to D
 
 - **Functions** keep their flat names: `SteamAPI_<Interface>_<Method>(self, ...)`. Interface
-  pointers come from the accessors, e.g. `SteamAPI_SteamUser()` (the unversioned inline accessor of
-  `steam_api_flat.h`, forwarding to the exported `SteamAPI_SteamUser_v023()`) or
-  `SteamAPI_SteamGameServerNetworking()`.
+  pointers come from the accessors, e.g. `SteamUser()` (D layer) or `SteamAPI_SteamUser()` (the
+  unversioned inline accessor of `steam_api_flat.h`, forwarding to the exported
+  `SteamAPI_SteamUser_v023()`).
 - **Header-inline functions** the library does not export are provided in D:
   `SteamAPI_Init`, `SteamAPI_InitEx`, `SteamGameServer_Init`, `SteamGameServer_InitEx`,
-  `SteamGameServer_ReleaseCurrentThreadMemory`, `SteamClient` and `SteamGameServerClient`, plus the
-  trivial inline members of `CSteamID`, `CGameID`, `SteamIPAddress_t`, `SteamNetworkingIPAddr`,
-  `SteamNetworkingIdentity` and `SteamNetworkingConfigValue_t`.
+  `SteamGameServer_ReleaseCurrentThreadMemory`, `SteamClient`, `SteamGameServerClient` and
+  `BIsHTTPStatusSuccess`, plus the trivial inline members of `CSteamID`, `CGameID`,
+  `SteamIPAddress_t`, `SteamNetworkingIPAddr`, `SteamNetworkingIdentity` and
+  `SteamNetworkingConfigValue_t`.
 - **Steam IDs** cross the flat API as `uint64_steamid` (and `uint64_gameid`); `CSteamID` and
   `CGameID` are 8-byte, byte-aligned structs with the C++ accessors (`GetAccountID`,
   `GetEAccountType`, `IsValid`, ...), used in callback structs.
@@ -204,10 +318,8 @@ each). Call `runFrame()` once per frame.
 - **C++ references** (`const SteamNetworkingIPAddr &`) are `ref const(SteamNetworkingIPAddr)`;
   strings are `const(char)*`; fixed buffers such as `SteamErrMsg` are static arrays passed by
   pointer.
-- **Callback structs** carry `enum int k_iCallback`. Their fields use
-  `align(callbackAlign!T)`, reproducing `VALVE_CALLBACK_PACK` (4 on Linux, macOS and Android,
-  8 on Windows), and byte-packed structs use `align(1)`, so layouts match the platform's C++
-  compiler.
+- **Callback structs** carry `enum int k_iCallback` and the platform's packing (see
+  [Platform notes](#platform-notes)).
 - **Structs** default-initialize to all zero bytes, like C++ value-initialization (D would
   otherwise fill `char` arrays with `0xFF` and floats with NaN).
 - **Asynchronous functions** carry their result type as a UDA:
@@ -217,8 +329,7 @@ each). Call `runFrame()` once per frame.
   `...PingResponse`, `...PlayersResponse`, `...RulesResponse`, `CCallbackBase`,
   `ISteamNetworkingConnectionSignaling`, `ISteamNetworkingSignalingRecvContext`) are
   `extern (C++)` abstract classes; derive an `extern (C++)` class, keep the object alive while
-  Steam holds it, and keep overrides `nothrow`. On Windows the compiler lays out the vtable as
-  MSVC does.
+  Steam holds it, and keep overrides `nothrow`.
 
 ## Modules
 
@@ -243,7 +354,7 @@ each). Call `runFrame()` once per frame.
 | `steamworks.raw.isteam*`, `steam_api`, `steam_gameserver`, `steam*types`, ... | Flat functions, one module per SDK header. |
 | `steamworks.raw.steamid`                | `CSteamID`, `CGameID`.                                                      |
 | `steamworks.raw.manual`                 | Hand-written union and C++ class types.                                     |
-| `steamworks.raw.helpers`                | The header-inline init functions and `SteamClient`.                         |
+| `steamworks.raw.helpers`                | The header-inline init functions, `SteamClient`, `BIsHTTPStatusSuccess`.    |
 | `steamworks.raw.platform`               | `VALVE_CALLBACK_PACK`, `callbackAlign`, `packAlign`.                        |
 | `steamworks.raw.attributes`             | `SteamCallResult`, `SteamCallback` UDAs.                                    |
 | `steamworks.raw.symbols`                | The list of every bound function, used by the loader and tests.             |
@@ -256,11 +367,11 @@ each). Call `runFrame()` once per frame.
   `g_pSteamClientGameServer` variable. They are listed in `steamworksUnboundExports`.
 - `ISteamMusicRemote`, `ISteamGameCoordinator` and `ISteamAppTicket` have no flat API (their
   version strings are still provided); the PS3 headers are obsolete.
-- C++-only conveniences: the `CCallback`/`CCallResult` templates (use `CCallbackBase`, manual
-  dispatch or the D dispatcher), the `SteamUser()`-style inline accessors of the C++ API (the flat
-  `SteamAPI_SteamUser()` family returns the same interfaces), the `*Render` string helper classes,
-  the `STEAM_CALLBACK`-style macros, and the `SteamNetworkingMessage_t::Get*` compatibility
-  getters. Interface methods with no flat function (`ISteamClient::RunFrame` and other internal or
+- C++-only conveniences: the `CCallback`/`CCallResult` templates (use the D dispatcher,
+  `CCallbackBase` or manual dispatch), the `SteamUser()`-style inline accessors of the C++ API
+  (the D layer provides equivalents), the `*Render` string helper classes, the
+  `STEAM_CALLBACK`-style macros, and the `SteamNetworkingMessage_t::Get*` compatibility getters.
+  Interface methods with no flat function (`ISteamClient::RunFrame` and other internal or
   deprecated methods) cannot be called from C. The `abiVerify` section of
   `tools/gen/overrides.json` lists every such header declaration with its reason.
 - `SteamDatagramRelayAuthTicket` is opaque: the SDK only forward-declares it.
@@ -270,55 +381,84 @@ each). Call `runFrame()` once per frame.
 
 ```sh
 tools/fetch-sdk.sh          # SDK into ./sdk (gitignored; never committed)
-tools/gen/generate.sh       # regenerate source/steamworks/raw and the ABI expectations
 tests/run.sh                # every check below, with dmd and ldc2
+tools/format.sh [--check]   # dfmt 0.15.2 (built with dub if not installed)
+tools/lint.sh               # D-Scanner with dscanner.ini
 ```
 
-Generation needs dub, a D compiler, `clang++` (for the ABI probe) and `dfmt`.
+Run `ulimit -n 65536` first on macOS if dub runs out of file descriptors.
 
-- `tools/gen` reads `steam_api.json` and scans the SDK headers for what the JSON lacks (the
-  `#pragma pack` in force for each struct, the defining header, interface version macros).
-  `tools/gen/overrides.json` holds every correction and header-only addition, each with the header
-  it comes from and the reason. Generated files start with a "do not edit" banner;
-  `tools/gen/generate.sh --check` fails if any is stale.
-- `tools/check-abi.sh [step...]` runs every ABI and symbol check, one step at a time:
-  - `generated`: the generated modules and ABI expectations are current.
-  - `probe` (`tests/abi/check.sh`): the clang-measured expectations compiled against the bindings
-    natively and for all eight targets (ldc2 cross-compilation), in both configurations.
-  - `native` (`tests/abi/native/run.sh`): the probe compiled and run natively (and as x86_64 under
-    Rosetta), compared value by value with a D program built with dmd and ldc2.
-  - `verify` (`steamworks-gen --verify`): `tests/abi/reflect/dump.d` makes dmd and ldc2 describe
-    every declaration of `steamworks.raw` for each target, and the generator turns the
-    description into C++ static_asserts compiled against the headers with clang: sizes,
-    alignments and offsets, exact field, alias and signature types (`long` and `long long`
-    compare by size), enumerator and constant values, vtable slots (Itanium and MSVC order) and
-    `extern(C++)`/`extern(C)` linkage. It compares clang's AST and macro table with the
-    description in both directions, so a header declaration missing from D, or a D declaration
-    missing from the headers, fails unless the `abiVerify` section of `tools/gen/overrides.json`
-    justifies it (stale entries fail too). `tests/abi/reflect/linkrefs.d` then shows, for every
-    target, that the linked configuration references exactly the declared functions under the
-    names the target's `libsteam_api` (or import library) exports, and that every export is bound
-    or listed in `unboundExports`. Pass `--verify-dir DIR` to keep the generated C++ checks.
-  - `exports` (`tests/exports/check.sh`): every redistributable library's export table
-    (including the DLLs) against the bound functions.
-  - `cabi` (`tests/cabi/run.sh`): calls into clang-compiled stand-ins of the functions that pass
-    structs by value, checking the calling convention with dmd and ldc2 (and x86_64 under Rosetta
-    on Apple silicon).
-- `tests/smoke` runs against the real library without a Steam client: symbol resolution,
-  initialization failure handling, the library's struct helpers, C++ virtual calls from the library
-  into D, and callback registration.
-- `tests/vtable/run.sh` calls the D response classes from clang-compiled C++ through the SDK's own
-  class declarations (dmd, ldc2, and x86_64 under Rosetta on Apple silicon).
-- `tests/layer` runs the D layer against the real library without a Steam client: initialization
-  failures, idle dispatchers and the networking conversions' behaviour before initialization.
-- The dispatcher's unit tests drive it with a fake `CallbackSource`: ordering, reentrant
-  registration and cancellation, call-result sizing and failures, exceptions, and no GC
-  allocation in `runFrame`.
+### Regenerating for a new SDK
+
+```sh
+STEAMWORKS_SDK=/path/to/new/sdk tools/fetch-sdk.sh   # after moving the old ./sdk away
+tools/gen/generate.sh --sdk-version 1.xx             # regenerate source/steamworks/raw and tests/abi
+tools/check-abi.sh                                   # verify; then tests/run.sh
+```
+
+`tools/gen` reads `steam_api.json` and scans the SDK headers for what the JSON lacks (the
+`#pragma pack` in force for each struct, the defining header, interface version macros, header-only
+functions and constants). `tools/gen/overrides.json` holds every correction and header-only
+addition, each with the header it comes from and the reason; the headers are the ground truth.
+Generated files start with a "do not edit" banner, and `tools/gen/generate.sh --check` fails if
+any is stale. After regenerating, `tools/check-abi.sh` reports every declaration that changed
+shape, appeared or disappeared; new header-only items need entries in `overrides.json`, and new
+C++ callback interfaces or unions need hand-written definitions in `steamworks.raw.manual`. The
+D layer's accessors (`steamworks.accessors`) name versioned accessors and may need updating when
+interface versions change.
+
+### ABI verification
+
+`tools/check-abi.sh [step...]` runs every ABI and symbol check, one step at a time (`DCS`
+selects the D compilers, default `dmd ldc2`):
+
+- `generated`: the generated modules and ABI expectations are current.
+- `probe` (`tests/abi/check.sh`): a clang probe's measurements of every size, member alignment,
+  field offset, enumerator, constant, flat function signature and interface version string,
+  checked against the bindings natively and for all eight targets (ldc2 cross-compilation), in
+  both configurations.
+- `native` (`tests/abi/native/run.sh`, macOS): the probe compiled and run natively (and as x86_64
+  under Rosetta), compared value by value with a D program built with dmd and ldc2.
+- `verify` (`steamworks-gen --verify`): `tests/abi/reflect/dump.d` makes the D compilers describe
+  every declaration of `steamworks.raw` for each target, and the generator turns the description
+  into C++ static_asserts compiled against the headers with clang: sizes, alignments and offsets,
+  exact field, alias and signature types (`long` and `long long` compare by size), enumerator and
+  constant values, vtable slots (Itanium and MSVC order) and `extern (C++)`/`extern (C)` linkage.
+  It compares clang's AST and macro table with the description in both directions, so a header
+  declaration missing from D, or a D declaration missing from the headers, fails unless the
+  `abiVerify` section of `tools/gen/overrides.json` justifies it. `tests/abi/reflect/linkrefs.d`
+  then shows, for every target, that the linked configuration references exactly the declared
+  functions under the names the target's `libsteam_api` (or import library) exports.
+- `exports` (`tests/exports/check.sh`): every redistributable library's export table (including
+  the DLLs) against the bound functions.
+- `cabi` (`tests/cabi/run.sh`): calls into clang-compiled stand-ins of the functions that pass
+  structs by value, checking the calling convention natively (and x86_64 under Rosetta on Apple
+  silicon).
+
+Other tests: `tests/smoke` and `tests/layer` run the raw API and the D layer against the real
+library without a Steam client (symbol resolution, initialization failures, the library's struct
+helpers, C++ virtual calls from the library into D, callback registration); `tests/vtable/run.sh`
+calls the D response classes from C++ through the SDK's own class declarations; the dispatcher's
+unit tests drive it with a fake `CallbackSource`.
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs the unit tests in both configurations, the smoke and D-layer
+tests, and builds every example on Linux, macOS and Windows with the latest dmd and LDC; the full
+ABI verification on macOS (whose LLVM tools read every platform's binaries); the native ABI checks
+on Linux with both compilers; and the format and lint checks. It downloads the SDK with
+`tools/fetch-sdk.sh`.
 
 ## License
 
-Boost Software License 1.0, see [LICENSE](LICENSE).
+The bindings, generator, tests and examples are licensed under the
+[Boost Software License 1.0](LICENSE).
 
-The Steamworks SDK is © Valve Corporation and distributed under the Steamworks SDK license; it is
-not part of this repository. Steam and Steamworks are trademarks of Valve Corporation. This project
-is not affiliated with Valve.
+The Steamworks SDK, its headers and its redistributable libraries are the property of Valve
+Corporation, licensed under the
+[Steamworks SDK Access Agreement](https://partner.steamgames.com/documentation/sdk_access_agreement).
+They are not part of this repository or of the dub package; obtain them from Valve and follow
+that agreement when you redistribute `libsteam_api` with your game.
+
+Steam and Steamworks are trademarks or registered trademarks of Valve Corporation. This project is
+not affiliated with, endorsed by or sponsored by Valve.

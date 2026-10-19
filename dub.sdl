@@ -1,5 +1,6 @@
 name "steamworks"
-description "Complete D bindings for the Steamworks SDK flat C API"
+description "Complete D bindings for the Steamworks SDK flat C API, with a thin D layer"
+homepage "https://github.com/Poita/steamworks.d"
 authors "Peter Alexander"
 copyright "Copyright © 2026, Peter Alexander"
 license "BSL-1.0"
