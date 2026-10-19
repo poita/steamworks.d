@@ -3,9 +3,10 @@
 # ABI and symbol checks of tools/check-abi.sh (stale output, layouts and
 # signatures for all platforms, export tables, C ABI calls), the C++ calls
 # into D, and the smoke and D-layer tests against the SDK's library, plus the
-# linked-configuration unit tests, the examples, formatting and lint. Needs
-# the SDK in ./sdk (tools/fetch-sdk.sh), clang++, dmd and ldc2; dfmt and
-# D-Scanner are built with dub when the pinned versions are not installed.
+# linked-configuration unit tests, the examples, line endings, formatting and
+# lint. Needs the SDK in ./sdk (tools/fetch-sdk.sh), clang++, dmd and ldc2;
+# dfmt and D-Scanner are built with dub when the pinned versions are not
+# installed.
 # Builds run one at a time.
 set -eu
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -45,6 +46,8 @@ for dc in dmd ldc2; do
         dub build -q --root="$e" --compiler=$dc
     done
 done
+step "line endings (tests/eol.sh)"
+tests/eol.sh
 step "formatting (tools/format.sh --check)"
 tools/format.sh --check
 step "lint (tools/lint.sh)"

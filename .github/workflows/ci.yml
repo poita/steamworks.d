@@ -152,6 +152,9 @@ jobs:
         with:
           compiler: ldc-latest
 
+      - name: Line endings
+        run: tests/eol.sh
+
       - name: dfmt
         run: tools/format.sh --check
 
