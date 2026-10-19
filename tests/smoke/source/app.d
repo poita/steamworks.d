@@ -144,12 +144,25 @@ private void checkStructHelpers()
     SteamAPI_servernetadr_t_SetQueryPort(&b, 27_017);
     check(SteamAPI_servernetadr_t_IsLessThan(&a, b) && !SteamAPI_servernetadr_t_IsLessThan(&b,
             a), "servernetadr_t IsLessThan");
+    check(!SteamAPI_servernetadr_t_IsEqualTo(&a, b), "servernetadr_t IsEqualTo (different)");
+    SteamAPI_servernetadr_t_SetQueryPort(&b, 27_016);
+    check(SteamAPI_servernetadr_t_IsEqualTo(&a, b), "servernetadr_t IsEqualTo");
 
     gameserveritem_t item;
+    item.m_nCurrentFriendCount = 5;
+    item.m_nTotalFriendCount = 6;
     SteamAPI_gameserveritem_t_Construct(&item);
+    check(item.m_nCurrentFriendCount == 0 && item.m_nTotalFriendCount == 0, "gameserveritem_t friend counts offset");
     SteamAPI_gameserveritem_t_SetName(&item, "D server");
     check(str(SteamAPI_gameserveritem_t_GetName(&item)) == "D server", "gameserveritem_t name");
     check(item.m_szServerName[0 .. 8] == "D server", "gameserveritem_t m_szServerName offset");
+    gameserveritem_t other;
+    SteamAPI_gameserveritem_t_Construct(&other);
+    other.m_NetAdr = item.m_NetAdr;
+    other.m_nPing = 99;
+    check(SteamAPI_gameserveritem_t_IsEqualTo(&item, other), "gameserveritem_t IsEqualTo compares the address");
+    SteamAPI_servernetadr_t_SetConnectionPort(&other.m_NetAdr, 1);
+    check(!SteamAPI_gameserveritem_t_IsEqualTo(&item, other), "gameserveritem_t IsEqualTo (different)");
 
     MatchMakingKeyValuePair_t kv;
     kv.m_szKey[0] = 'x';
@@ -286,6 +299,30 @@ extern (C++) private class Rules : ISteamMatchmakingRulesResponse
     }
 }
 
+extern (C++) private class Friends : ISteamMatchmakingServerFriendsResponse
+{
+    ulong id;
+    string name;
+    bool connected, failed, done;
+
+    override void AddFriendToList(CSteamID steamID, const(char)* pchName, bool bCurrentlyConnected) nothrow
+    {
+        id = steamID.ConvertToUint64();
+        name = pchName[0 .. strlen(pchName)].idup;
+        connected = bCurrentlyConnected;
+    }
+
+    override void FriendsFailedToRespond() nothrow
+    {
+        failed = true;
+    }
+
+    override void FriendsRefreshComplete() nothrow
+    {
+        done = true;
+    }
+}
+
 /// The library's flat wrappers make C++ virtual calls into D objects.
 private void checkCppInterfaces()
 {
@@ -314,6 +351,13 @@ private void checkCppInterfaces()
     auto rules = new Rules;
     SteamAPI_ISteamMatchmakingRulesResponse_RulesResponded(rules, "mp_timelimit", "30");
     check(rules.rule == "mp_timelimit" && rules.value == "30", "RulesResponse calls");
+
+    auto friends = new Friends;
+    SteamAPI_ISteamMatchmakingServerFriendsResponse_AddFriendToList(friends, 76_561_197_960_287_930UL, "carol", true);
+    SteamAPI_ISteamMatchmakingServerFriendsResponse_FriendsFailedToRespond(friends);
+    SteamAPI_ISteamMatchmakingServerFriendsResponse_FriendsRefreshComplete(friends);
+    check(friends.id == 76_561_197_960_287_930UL && friends.name == "carol" && friends.connected
+            && friends.failed && friends.done, "ServerFriendsResponse calls");
 }
 
 extern (C++) private class Listener : CCallbackBase

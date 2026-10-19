@@ -254,10 +254,10 @@ version (SteamworksDynamic) unittest
 /// An accessor the loaded library lacks reports null.
 version (SteamworksDynamic) unittest
 {
-    const saved = SteamAPI_SteamUtils_v010;
+    const saved = SteamAPI_SteamUtils_v011;
     scope (exit)
-        SteamAPI_SteamUtils_v010 = saved;
-    SteamAPI_SteamUtils_v010 = null;
+        SteamAPI_SteamUtils_v011 = saved;
+    SteamAPI_SteamUtils_v011 = null;
     assert(SteamUtils() is null);
     assert(SteamAPI_SteamUtils() is null);
 }

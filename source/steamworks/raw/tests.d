@@ -154,7 +154,27 @@ unittest
 {
     static assert(STEAMUSER_INTERFACE_VERSION == "SteamUser023");
     static assert(STEAMCLIENT_INTERFACE_VERSION == "SteamClient023");
-    static assert(STEAMNETWORKINGSOCKETS_INTERFACE_VERSION == "SteamNetworkingSockets012");
+    static assert(STEAMNETWORKINGSOCKETS_INTERFACE_VERSION == "SteamNetworkingSockets013");
+    static assert(STEAMUTILS_INTERFACE_VERSION == "SteamUtils011");
+    static assert(STEAMMATCHMAKINGSERVERS_INTERFACE_VERSION == "SteamMatchMakingServers003");
+}
+
+/// SendMessages takes a mutable pointer array, which it may modify, and bDeleteFailedMessages.
+unittest
+{
+    import std.traits : Parameters;
+
+    alias P = Parameters!SteamAPI_ISteamNetworkingSockets_SendMessages;
+    static assert(is(P[2] == SteamNetworkingMessage_t**) && is(P[4] == bool));
+}
+
+/// gameserveritem_t ends with the friend counts.
+unittest
+{
+    static assert(gameserveritem_t.m_nTotalFriendCount.offsetof + int.sizeof == gameserveritem_t.sizeof);
+    static assert(
+            gameserveritem_t.m_nCurrentFriendCount.offsetof + int.sizeof
+            == gameserveritem_t.m_nTotalFriendCount.offsetof);
 }
 
 /// Methods take the interface as `self`; accessors return it.

@@ -302,13 +302,11 @@ align(1):
         k_EGameIDTypeApp = 0, ///
         k_EGameIDTypeGameMod = 1, ///
         k_EGameIDTypeShortcut = 2, ///
-        k_EGameIDTypeP2P = 3, ///
     }
 
     enum k_EGameIDTypeApp = EGameIDType.k_EGameIDTypeApp; /// ditto
     enum k_EGameIDTypeGameMod = EGameIDType.k_EGameIDTypeGameMod; /// ditto
     enum k_EGameIDTypeShortcut = EGameIDType.k_EGameIDTypeShortcut; /// ditto
-    enum k_EGameIDTypeP2P = EGameIDType.k_EGameIDTypeP2P; /// ditto
 
     /// The C++ bitfield struct `GameID_t`, with accessors for its fields.
     struct GameID_t
@@ -372,6 +370,23 @@ align(1):
         m_gameID.m_nType = nType;
     }
 
+    /// Constructs an app (`nID` is the app ID) or a shortcut (`nID` is the
+    /// mod ID); any other type gives zero. Use IsValid to check the result.
+    this(uint nID, EGameIDType nType) @safe pure nothrow @nogc
+    {
+        m_ulGameID = 0;
+        if (nType == k_EGameIDTypeApp)
+        {
+            m_gameID.m_nType = nType;
+            m_gameID.m_nAppID = nID;
+        }
+        else if (nType == k_EGameIDTypeShortcut)
+        {
+            m_gameID.m_nType = nType;
+            m_gameID.m_nModID = nID;
+        }
+    }
+
     /// The 64-bit representation.
     ulong ToUint64() const @safe pure nothrow @nogc
     {
@@ -402,28 +417,22 @@ align(1):
         return m_gameID.m_nType == k_EGameIDTypeShortcut;
     }
 
-    /// Whether this is a P2P file.
-    bool IsP2PFile() const @safe pure nothrow @nogc
-    {
-        return m_gameID.m_nType == k_EGameIDTypeP2P;
-    }
-
     /// Whether this is a Steam app.
     bool IsSteamApp() const @safe pure nothrow @nogc
     {
         return m_gameID.m_nType == k_EGameIDTypeApp;
     }
 
-    /// The mod ID.
+    /// The mod ID, or 0 for a shortcut.
     uint ModID() const @safe pure nothrow @nogc
     {
-        return m_gameID.m_nModID;
+        return m_gameID.m_nType == k_EGameIDTypeShortcut ? 0 : m_gameID.m_nModID;
     }
 
-    /// The app ID.
-    uint AppID(bool = false) const @safe pure nothrow @nogc
+    /// The app ID; for a shortcut, the shortcut's ID (stored in the mod ID bits).
+    uint AppID() const @safe pure nothrow @nogc
     {
-        return m_gameID.m_nAppID;
+        return m_gameID.m_nType == k_EGameIDTypeShortcut ? m_gameID.m_nModID : m_gameID.m_nAppID;
     }
 
     /// Whether the ID is well formed for its type.
@@ -438,8 +447,6 @@ align(1):
             return app != k_uAppIdInvalid && (mod & 0x8000_0000) != 0;
         case k_EGameIDTypeShortcut:
             return app == k_uAppIdInvalid && (mod & 0x8000_0000) != 0 && mod >= (5000 | 0x8000_0000);
-        case k_EGameIDTypeP2P:
-            return app == k_uAppIdInvalid && (mod & 0x8000_0000) != 0;
         default:
             return false;
         }
@@ -518,4 +525,25 @@ align(1):
     auto mod = CGameID(480, 0x8000_0001, CGameID.k_EGameIDTypeGameMod);
     assert(mod.IsMod() && mod.ModID() == 0x8000_0001 && mod.AppID() == 480 && mod.IsValid());
     assert(mod.ToUint64() == (0x8000_0001UL << 32 | 1UL << 24 | 480));
+}
+
+@safe pure nothrow @nogc unittest
+{
+    // A shortcut keeps its ID in the mod ID bits; AppID returns it and ModID returns 0.
+    auto shortcut = CGameID(0x8000_1389, CGameID.k_EGameIDTypeShortcut);
+    assert(shortcut.IsShortcut() && shortcut.IsValid());
+    assert(shortcut.AppID() == 0x8000_1389 && shortcut.ModID() == 0);
+    assert(shortcut.ToUint64() == (0x8000_1389UL << 32 | 2UL << 24));
+}
+
+@safe pure nothrow @nogc unittest
+{
+    auto app = CGameID(480, CGameID.k_EGameIDTypeApp);
+    assert(app.IsSteamApp() && app.AppID() == 480 && app.ToUint64() == 480);
+}
+
+@safe pure nothrow @nogc unittest
+{
+    // The two-argument constructor only handles apps and shortcuts; other types stay zero.
+    assert(CGameID(480, CGameID.k_EGameIDTypeGameMod).ToUint64() == 0);
 }

@@ -153,7 +153,7 @@
     },
     "CGameID.EGameIDType": {
       "cpp": "CGameID::EGameIDType",
-      "values": [ "k_EGameIDTypeApp", "k_EGameIDTypeGameMod", "k_EGameIDTypeShortcut", "k_EGameIDTypeP2P" ]
+      "values": [ "k_EGameIDTypeApp", "k_EGameIDTypeGameMod", "k_EGameIDTypeShortcut" ]
     }
   },
 
@@ -301,7 +301,8 @@
       "ISteamMatchmakingServerListResponse",
       "ISteamMatchmakingPingResponse",
       "ISteamMatchmakingPlayersResponse",
-      "ISteamMatchmakingRulesResponse"
+      "ISteamMatchmakingRulesResponse",
+      "ISteamMatchmakingServerFriendsResponse"
     ]
   },
 
@@ -373,7 +374,6 @@
       "interface-method ISteamClient::DEPRECATED_Remove_SteamAPI_CPostAPIResultInProcess": "steam_api_flat.h declares no flat function for this method and no libsteam_api exports one (tests/exports), so it cannot be called through the flat API.",
       "interface-method ISteamClient::Set_SteamAPI_CCheckCallbackRegisteredInProcess": "steam_api_flat.h declares no flat function for this method and no libsteam_api exports one (tests/exports), so it cannot be called through the flat API.",
       "interface-method ISteamClient::DestroyAllInterfaces": "steam_api_flat.h declares no flat function for this method and no libsteam_api exports one (tests/exports), so it cannot be called through the flat API.",
-      "interface-method ISteamUtils::GetCSERIPPort": "steam_api_flat.h declares no flat function for this method and no libsteam_api exports one (tests/exports), so it cannot be called through the flat API.",
       "interface-method ISteamUtils::RunFrame": "steam_api_flat.h declares no flat function for this method and no libsteam_api exports one (tests/exports), so it cannot be called through the flat API.",
       "interface-method ISteamGameServer::InitGameServer": "steam_api_flat.h declares no flat function for this method and no libsteam_api exports one (tests/exports), so it cannot be called through the flat API.",
       "interface-method ISteamGameServer::SetMasterServerHeartbeatInterval_DEPRECATED": "steam_api_flat.h declares no flat function for this method and no libsteam_api exports one (tests/exports), so it cannot be called through the flat API.",
@@ -384,6 +384,8 @@
       "method CSteamID::BValidExternalSteamID": "Declared without a definition in the SDK headers (implemented inside Steam); neither the headers nor libsteam_api provide it.",
       "method CGameID::Render": "Declared without a definition in the SDK headers (implemented inside Steam); neither the headers nor libsteam_api provide it.",
       "method servernetadr_t::operator<": "Exported as SteamAPI_servernetadr_t_IsLessThan, which the bindings declare.",
+      "method servernetadr_t::operator==": "Exported as SteamAPI_servernetadr_t_IsEqualTo, which the bindings declare.",
+      "method gameserveritem_t::operator==": "Exported as SteamAPI_gameserveritem_t_IsEqualTo, which the bindings declare; it compares only m_NetAdr.",
       "method servernetadr_t::ToString": "Private formatting helper of GetConnectionAddressString and GetQueryAddressString, which the library exports as SteamAPI_servernetadr_t_* and the bindings declare.",
       "method SteamNetworkingMessage_t::Get*": "Compatibility accessors the headers exclude from the API description (#ifndef API_GEN); each returns a public field.",
       "field CSteamID::SteamID_t::m_comp": "Bitfield struct; CSteamID exposes its fields through the C++ accessor methods (GetAccountID, GetUnAccountInstance, GetEAccountType, GetEUniverse and the setters).",
@@ -443,8 +445,7 @@
       "SteamNetworkingConfigValue_t.Value": "decltype(SteamNetworkingConfigValue_t::m_val)"
     },
     "constRelaxed": {
-      "_reason": "Signatures with a C++ head-const pointer (`T *const *`), which D's transitive const can only spell as `const(T*)*`; the ABI is the same, so these compare without const.",
-      "SteamAPI_ISteamNetworkingSockets_SendMessages": "pMessages is `SteamNetworkingMessage_t *const *` in C++ and `const(SteamNetworkingMessage_t*)*` in D."
+      "_reason": "Signatures with a C++ head-const pointer (`T *const *`), which D's transitive const can only spell as `const(T*)*`; the ABI is the same, so these compare without const."
     },
     "interfaceVersionLists": {
       "_reason": "D constants that copy the interface version list the named inline C++ function passes to the library.",

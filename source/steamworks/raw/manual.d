@@ -491,8 +491,7 @@ struct SteamNetworkingConfigValue_t
     void SetString(ESteamNetworkingConfigValue eVal, const(char)* data) @trusted pure nothrow @nogc
     {
         m_eValue = eVal;
-        // The headers tag strings as k_ESteamNetworkingConfig_Ptr.
-        m_eDataType = ESteamNetworkingConfigDataType.k_ESteamNetworkingConfig_Ptr;
+        m_eDataType = ESteamNetworkingConfigDataType.k_ESteamNetworkingConfig_String;
         m_val.m_string = data;
     }
 }
@@ -835,6 +834,14 @@ unittest
     assert(v.m_val.m_int32 == 5000);
     v.SetFloat(ESteamNetworkingConfigValue.k_ESteamNetworkingConfig_FakePacketLoss_Send, 0.5f);
     assert(v.m_val.m_float == 0.5f);
+}
+
+@system pure nothrow @nogc unittest
+{
+    SteamNetworkingConfigValue_t v;
+    v.SetString(ESteamNetworkingConfigValue.k_ESteamNetworkingConfig_SDRClient_DevTicket, "ticket");
+    assert(v.m_eDataType == ESteamNetworkingConfigDataType.k_ESteamNetworkingConfig_String);
+    assert(v.m_val.m_string[0 .. 6] == "ticket");
 }
 
 @safe pure nothrow @nogc unittest

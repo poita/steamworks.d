@@ -21,7 +21,7 @@ int main(string[] args)
     string sdk = "sdk";
     string overrides = "tools/gen/overrides.json";
     string outDir = ".";
-    string sdkVersion = "1.64";
+    string sdkVersion = "1.65";
     string dfmt;
     string clang = "clang++";
     bool check;
@@ -34,7 +34,7 @@ int main(string[] args)
     auto help = getopt(args, "sdk", "Steamworks SDK directory containing public/steam (default: sdk)",
             &sdk, "overrides", "Overrides file (default: tools/gen/overrides.json)", &overrides,
             "out", "Repository root to write into (default: .)", &outDir,
-            "sdk-version", "SDK version recorded in the banner (default: 1.64)", &sdkVersion,
+            "sdk-version", "SDK version recorded in the banner (default: 1.65)", &sdkVersion,
             "dfmt", "Format generated D with this dfmt executable", &dfmt, "check",
             "Compare instead of writing; exit 1 if anything is stale",
             &check, "abi", "Also run the clang ABI probe and regenerate tests/abi",

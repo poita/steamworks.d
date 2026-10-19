@@ -3,8 +3,9 @@
 # the bindings: each export must be a bound function (steamworksFunctionNames)
 # or a deliberately unbound one (steamworksUnboundExports), and every bound
 # function must be exported. C++ runtime symbols (statically linked into the
-# Android build), glibc wrappers and the Linux-only SteamRealPath helper are
-# ignored.
+# Android build), glibc wrappers, the linker's section boundary symbols
+# (__bss_start, _edata, _end, exported by the Linux arm64 build) and the
+# Linux-only SteamRealPath helper are ignored.
 set -eu
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 BIN="$ROOT/sdk/redistributable_bin"
@@ -23,7 +24,7 @@ echo "$(wc -l < "$TMP/bound" | tr -d ' ') bound, $(wc -l < "$TMP/unbound" | tr -
 status=0
 check() {
     lib="$1"; list="$2"
-    grep -v -E '^(_Z|__wrap_|__cxa_|__gxx_|__emutls_|__llvm_|__dynamic_cast$|_init$|_fini$|SteamRealPath$)' "$list" | sort -u > "$list.c"
+    grep -v -E '^(_Z|__wrap_|__cxa_|__gxx_|__emutls_|__llvm_|__dynamic_cast$|_init$|_fini$|__bss_start$|_edata$|_end$|SteamRealPath$)' "$list" | sort -u > "$list.c"
     extra="$(comm -23 "$list.c" "$TMP/known")"
     missing="$(comm -13 "$list.c" "$TMP/bound")"
     if [ -z "$extra$missing" ]; then

@@ -13,6 +13,7 @@ import steamworks.raw.isteamgameserver;
 import steamworks.raw.isteaminput;
 import steamworks.raw.isteamnetworking;
 import steamworks.raw.isteammatchmaking;
+import steamworks.raw.isteamnetworkingsockets;
 import steamworks.raw.isteamnetworkingutils;
 import steamworks.raw.isteamuser;
 import steamworks.raw.isteamuserstats;
@@ -95,6 +96,13 @@ int main()
     l2.m_data[511] = 8;
     check(SteamAPI_ISteamNetworkingUtils_EstimatePingTimeBetweenTwoLocations(null, l1, l2) == 42,
             "const reference parameters");
+
+    SteamNetworkingMessage_t* sent;
+    SteamNetworkingMessage_t*[2] batch = [cast(SteamNetworkingMessage_t*) 0x10, null];
+    long[2] results;
+    SteamAPI_ISteamNetworkingSockets_SendMessages(cast(ISteamNetworkingSockets*)&sent, 2,
+            batch.ptr, results.ptr, true);
+    check(sent == batch[0] && results[0] == 2 && results[1] == 1, "pointer arrays and a trailing bool");
 
     if (failures)
         return 1;

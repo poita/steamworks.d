@@ -105,15 +105,24 @@ S_API int SteamAPI_ISteamNetworkingUtils_EstimatePingTimeBetweenTwoLocations( IS
 	return location1.m_data[0] - location2.m_data[511];
 }
 
+S_API void SteamAPI_ISteamNetworkingSockets_SendMessages( ISteamNetworkingSockets* self, int nMessages, SteamNetworkingMessage_t ** pMessages, int64 * pOutMessageNumberOrResult, bool bDeleteFailedMessages )
+{
+	*(SteamNetworkingMessage_t **)self = pMessages[0];
+	pOutMessageNumberOrResult[0] = nMessages;
+	pOutMessageNumberOrResult[1] = bDeleteFailedMessages;
+}
+
 // The D modules' unversioned accessors reference these exports.
 S_API ISteamController *SteamAPI_SteamController_v008() { return nullptr; }
 S_API ISteamNetworking *SteamAPI_SteamGameServerNetworking_v006() { return nullptr; }
 S_API ISteamGameServer *SteamAPI_SteamGameServer_v015() { return nullptr; }
-S_API ISteamInput *SteamAPI_SteamInput_v006() { return nullptr; }
-S_API ISteamMatchmakingServers *SteamAPI_SteamMatchmakingServers_v002() { return nullptr; }
+S_API ISteamInput *SteamAPI_SteamInput_v007() { return nullptr; }
+S_API ISteamMatchmakingServers *SteamAPI_SteamMatchmakingServers_v003() { return nullptr; }
 S_API ISteamMatchmaking *SteamAPI_SteamMatchmaking_v009() { return nullptr; }
 S_API ISteamNetworkingUtils *SteamAPI_SteamNetworkingUtils_SteamAPI_v004() { return nullptr; }
 S_API ISteamNetworking *SteamAPI_SteamNetworking_v006() { return nullptr; }
+S_API ISteamNetworkingSockets *SteamAPI_SteamNetworkingSockets_SteamAPI_v013() { return nullptr; }
+S_API ISteamNetworkingSockets *SteamAPI_SteamGameServerNetworkingSockets_SteamAPI_v013() { return nullptr; }
 S_API ISteamParties *SteamAPI_SteamParties_v002() { return nullptr; }
 S_API ISteamUserStats *SteamAPI_SteamUserStats_v013() { return nullptr; }
 S_API ISteamUser *SteamAPI_SteamUser_v023() { return nullptr; }

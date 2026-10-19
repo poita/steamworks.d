@@ -487,7 +487,7 @@ string emitInterfaces(const ref Model m, string sdk)
                 // The virtual functions receive the object as `this`.
                 string[] ps;
                 foreach (ref p; f.params[1 .. $])
-                    ps ~= ctx.d(p.type, Use.param) ~ " " ~ dIdent(p.name);
+                    ps ~= ctx.d(virtualParamType(p.type), Use.param) ~ " " ~ dIdent(p.name);
                 c.line("/// " ~ i.name ~ "::" ~ f.method ~ ".");
                 c.line(format!"abstract %s %s(%s) nothrow;"(ctx.d(f.ret), f.method, ps.join(", ")));
             }
@@ -778,6 +778,25 @@ Output generate(const ref Model m, string sdk)
     return o;
 }
 
+/// The parameter type of a C++ callback interface's virtual function, given
+/// its flat function's parameter type: the flat API passes `CSteamID` and
+/// `CGameID` by value as `uint64_steamid` and `uint64_gameid`, the virtual
+/// functions take the classes themselves.
+const(CType) virtualParamType(const CType t) @safe pure nothrow
+{
+    if (t.ptrs.length || t.isRef || t.dims.length || t.isFunctionPointer)
+        return t;
+    CType r;
+    r.baseConst = t.baseConst;
+    if (t.base == "uint64_steamid")
+        r.base = "CSteamID";
+    else if (t.base == "uint64_gameid")
+        r.base = "CGameID";
+    else
+        return t;
+    return r;
+}
+
 unittest
 {
     assert(cExprToD("0xffffffffffffffffull", null) == "0xffffffffffffffffUL");
@@ -862,4 +881,12 @@ unittest
     assert(o["source/steamworks/raw/isteamx.d"].canFind("ISteamX* SteamAPI_SteamX() nothrow @nogc\n{\n"
             ~ "    version (SteamworksDynamic)\n        if (SteamAPI_SteamX_v001 is null)\n"
             ~ "            return null;\n    return SteamAPI_SteamX_v001();\n}"));
+}
+
+unittest
+{
+    assert(virtualParamType(parseCType("uint64_steamid")).base == "CSteamID");
+    assert(virtualParamType(parseCType("uint64_gameid")).base == "CGameID");
+    assert(virtualParamType(parseCType("uint64_steamid *")).base == "uint64_steamid");
+    assert(virtualParamType(parseCType("const char *")).base == "char");
 }
