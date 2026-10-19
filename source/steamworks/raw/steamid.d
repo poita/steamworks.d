@@ -204,19 +204,6 @@ align(1):
         setBits(32, 20, unInstance);
     }
 
-    /// Clears the instance of an individual account.
-    void ClearIndividualInstance() @safe pure nothrow @nogc
-    {
-        if (BIndividualAccount())
-            SetAccountInstance(0);
-    }
-
-    /// Whether this is an individual account without an instance.
-    bool HasNoIndividualInstance() const @safe pure nothrow @nogc
-    {
-        return BIndividualAccount() && GetUnAccountInstance() == 0;
-    }
-
     /// The account ID.
     AccountID_t GetAccountID() const @safe pure nothrow @nogc
     {
