@@ -1,8 +1,9 @@
 #!/bin/sh
 # Runs every check: generator and library unit tests with dmd and ldc2, the
-# stale-output check, the ABI checks for all platforms, the export tables,
-# the C ABI calls, the C++ calls into D, and the smoke and D-layer tests
-# against the SDK's library, plus the linked-configuration unit tests. Needs the
+# ABI and symbol checks of tools/check-abi.sh (stale output, layouts and
+# signatures for all platforms, export tables, C ABI calls), the C++ calls
+# into D, and the smoke and D-layer tests against the SDK's library, plus the
+# linked-configuration unit tests. Needs the
 # SDK in ./sdk (tools/fetch-sdk.sh), clang++, dfmt, dmd and ldc2.
 # Builds run one at a time.
 set -eu
@@ -17,14 +18,8 @@ for dc in dmd ldc2; do
     step "library unit tests ($dc)"
     dub test -q --compiler=$dc
 done
-step "generated files are current"
-tools/gen/generate.sh --check
-step "ABI against the SDK headers"
-tests/abi/check.sh
-step "export tables"
-tests/exports/check.sh
-step "C ABI calls"
-tests/cabi/run.sh
+step "ABI and symbols against the SDK (tools/check-abi.sh)"
+tools/check-abi.sh
 step "C++ calls into the D response classes"
 tests/vtable/run.sh
 for dc in dmd ldc2; do
