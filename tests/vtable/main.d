@@ -68,11 +68,11 @@ int main()
         size_t[3] requests;
         int responded = -1, failed = -1;
         EMatchMakingServerResponse complete;
-        auto list = new ServerListResponse((HServerListRequest r, int i) nothrow {
+        auto list = new ServerListResponse((HServerListRequest r, int i) nothrow{
             requests[0] = cast(size_t) r;
             responded = i;
-        }, (HServerListRequest r, int i) nothrow { requests[1] = cast(size_t) r; failed = i; },
-                (HServerListRequest r, EMatchMakingServerResponse c) nothrow {
+        }, (HServerListRequest r, int i) nothrow{ requests[1] = cast(size_t) r; failed = i; },
+                (HServerListRequest r, EMatchMakingServerResponse c) nothrow{
             requests[2] = cast(size_t) r;
             complete = c;
         });
@@ -85,30 +85,30 @@ int main()
         uint account;
         const(char)[] name;
         bool failed;
-        auto response = new PingResponse((ref const gameserveritem_t s) nothrow {
+        auto response = new PingResponse((ref const gameserveritem_t s) nothrow{
             ping = s.m_nPing;
             players = s.m_nPlayers;
             name = fromCString(s.m_szServerName).dup;
             account = s.m_steamID.accountID;
-        }, () nothrow { failed = true; });
+        }, () nothrow{ failed = true; });
         shim_ping(response);
         check(ping == 33 && players == 5 && name == "shim server" && account == 22_202 && failed, "PingResponse");
     }
     {
         string log;
         int calls;
-        auto response = new PlayersResponse((const(char)[] n, int score, float time) nothrow {
+        auto response = new PlayersResponse((const(char)[] n, int score, float time) nothrow{
             if ((n == "alice" && score == 12 && time == 1.5f) || (n == "bob" && score == -3 && time == 0.25f))
                 ++calls;
-        }, () nothrow { log ~= "failed;"; }, () nothrow { log ~= "complete;"; });
+        }, () nothrow{ log ~= "failed;"; }, () nothrow{ log ~= "complete;"; });
         shim_players(response);
         check(calls == 2 && log == "failed;complete;", "PlayersResponse");
     }
     {
         string log;
-        auto response = new RulesResponse((const(char)[] rule, const(char)[] value) nothrow {
+        auto response = new RulesResponse((const(char)[] rule, const(char)[] value) nothrow{
             log ~= rule ~ "=" ~ value ~ ";";
-        }, () nothrow { log ~= "failed;"; }, () nothrow { log ~= "complete;"; });
+        }, () nothrow{ log ~= "failed;"; }, () nothrow{ log ~= "complete;"; });
         shim_rules(response);
         check(log == "mp_timelimit=30;failed;complete;", "RulesResponse");
     }

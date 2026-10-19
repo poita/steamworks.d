@@ -40,25 +40,23 @@ int main(string[] args)
         steamShutdown();
 
     const me = CSteamID(SteamAPI_ISteamUser_GetSteamID(SteamUser()));
-    writefln("logged in as %s %s", fromCString(SteamAPI_ISteamFriends_GetPersonaName(SteamFriends())),
-            me.toSteam3String);
+    writefln("logged in as %s %s",
+            fromCString(SteamAPI_ISteamFriends_GetPersonaName(SteamFriends())), me.toSteam3String);
 
     auto steam = CallbackDispatcher.forClient();
 
     // A callback: every PersonaStateChange_t until unregistered.
     auto personaToken = steam.register((ref const PersonaStateChange_t e) {
-        writefln("persona state change for %s (flags %#x)", CSteamID(e.m_ulSteamID).toSteam3String,
-            e.m_nChangeFlags);
+        writefln("persona state change for %s (flags %#x)", CSteamID(e.m_ulSteamID).toSteam3String, e.m_nChangeFlags);
     });
 
     // A call result, with the struct type taken from the function's attribute.
-    steam.call!SteamAPI_ISteamUserStats_GetNumberOfCurrentPlayers(SteamUserStats())
-        .then((ref r, ioFailure) {
-            if (ioFailure || !r.m_bSuccess)
-                writeln("player count unavailable");
-            else
-                writefln("%s players in game", r.m_cPlayers);
-        });
+    steam.call!SteamAPI_ISteamUserStats_GetNumberOfCurrentPlayers(SteamUserStats()).then((ref r, ioFailure) {
+        if (ioFailure || !r.m_bSuccess)
+            writeln("player count unavailable");
+        else
+            writefln("%s players in game", r.m_cPlayers);
+    });
 
     // A call result named explicitly.
     const find = SteamAPI_ISteamUserStats_FindLeaderboard(SteamUserStats(), "Feet Traveled");

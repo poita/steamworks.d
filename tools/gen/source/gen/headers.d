@@ -212,8 +212,7 @@ void scanHeader(string file, string text, ref HeaderInfo info)
             continue;
 
         if (auto m = line.matchFirst(ctRegex!(`^\s*(?:typedef\s+)?enum\s+(\w+)`)))
-            if (m[1] !in info.headerOf)
-                info.headerOf[m[1]] = file;
+            info.headerOf.require(m[1], file);
 
         string opened;
         if (auto m = line.matchFirst(callbackBeginRe))
