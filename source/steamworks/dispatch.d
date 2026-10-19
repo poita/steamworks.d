@@ -46,8 +46,8 @@ import core.atomic : atomicOp;
 import core.memory : GC;
 import core.stdc.stdlib : free, malloc, realloc;
 import core.stdc.string : memcpy, memset;
-import std.traits : FunctionAttribute, functionAttributes, getUDAs, isCallable, isDelegate,
-    isFunctionPointer, Parameters, Unqual;
+import std.traits : FunctionAttribute, functionAttributes, FunctionTypeOf, getUDAs, isCallable,
+    isDelegate, isFunctionPointer, Parameters, Unqual;
 
 import steamworks.raw.attributes : SteamCallResult;
 import steamworks.raw.callbacks : SteamAPICallCompleted_t;
@@ -360,9 +360,20 @@ struct BasicCallbackDispatcher(bool nogcHandlers)
     /// d.call!SteamAPI_ISteamUserStats_FindLeaderboard(SteamUserStats(), "Feet Traveled")
     ///     .then((ref r, ioFailure) { ... });
     /// ---
-    PendingCall!(CallResultOf!fn) call(alias fn, Args...)(auto ref Args args) return
+    ///
+    /// The arguments take `fn`'s exact parameter list, so they convert as in a
+    /// direct call (string literals to `const(char)*`, `ref` and `out`
+    /// parameters kept).
+    template call(alias fn)
     {
-        return PendingCall!(CallResultOf!fn)(&this, fn(args));
+        static if (is(FunctionTypeOf!fn Params == __parameters))
+        {
+            /// ditto
+            PendingCall!(CallResultOf!fn) call(Params args) return
+            {
+                return PendingCall!(CallResultOf!fn)(&this, fn(args));
+            }
+        }
     }
 
     /// An asynchronous call made with `call`, waiting for a handler.
@@ -904,6 +915,13 @@ version (unittest)
 
     private __gshared int fakeFindCalls;
 
+    @SteamCallResult!LeaderboardFindResult_t() private SteamAPICall_t fakeFindByName(const(char)* name,
+            ref const PersonaStateChange_t extra, out int written) nothrow @nogc
+    {
+        written = extra.m_nChangeFlags;
+        return name[0] == 'F' ? 51 : k_uAPICallInvalid;
+    }
+
     @SteamCallResult!LeaderboardFindResult_t() private SteamAPICall_t fakeFindLeaderboard(int answer)
     {
         ++fakeFindCalls;
@@ -1372,6 +1390,17 @@ unittest
     src.complete(50, board(7));
     d.runFrame();
     assert(handle == 7);
+}
+
+/// call!fn converts arguments as a direct call would, keeping ref and out
+/// parameters.
+unittest
+{
+    auto d = CallbackDispatcher(1, new FakeSource);
+    int written;
+    const extra = persona(1, 5);
+    auto pending = d.call!fakeFindByName("Feet", extra, written);
+    assert(pending.handle == 51 && written == 5);
 }
 
 /// runFrame allocates nothing from the GC once handlers are registered.
