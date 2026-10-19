@@ -13,22 +13,26 @@ ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
 SRC="tests/abi/source/abi_expected.d"
 fail=0
+# run <label> <command...>
 run() {
+    label="$1"; shift
     if "$@" >/dev/null 2>"$ROOT/.abi-check.log"; then
-        echo "ok    $*"
+        echo "ok    $label"
     else
-        echo "FAIL  $*"; cat "$ROOT/.abi-check.log"; fail=1
+        echo "FAIL  $label"; cat "$ROOT/.abi-check.log"; fail=1
     fi
 }
 for v in "" "SteamworksDynamic"; do
     vd=${v:+-version=$v}
     vl=${v:+-d-version=$v}
-    run dmd $vd -c -o- -Isource "$SRC"
-    run ldc2 $vl -c -o- -Isource "$SRC"
+    cfg=${v:-linked}
+    run "dmd native ($cfg)" dmd $vd -c -o- -Isource "$SRC"
+    run "ldc2 native ($cfg)" ldc2 $vl -c -o- -Isource "$SRC"
     for t in arm64-apple-macos x86_64-apple-macos x86_64-windows-msvc i686-windows-msvc \
              x86_64-linux-gnu i686-linux-gnu aarch64-linux-gnu aarch64-linux-android; do
-        run ldc2 -mtriple=$t $vl -c -o- -Isource "$SRC"
-        run ldc2 -mtriple=$t $vl -unittest -c -o- -Isource $(find source -name '*.d' | sort)
+        run "ldc2 $t ($cfg)" ldc2 -mtriple=$t $vl -c -o- -Isource "$SRC"
+        run "ldc2 $t library unittests ($cfg)" \
+            ldc2 -mtriple=$t $vl -unittest -c -o- -Isource $(find source -name '*.d' | sort)
     done
 done
 rm -f "$ROOT/.abi-check.log"
