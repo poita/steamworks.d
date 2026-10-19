@@ -5,13 +5,16 @@ SDK 1.65 and checked against the SDK headers for every platform Valve ships `lib
 
 - **Complete.** Every function the SDK headers declare and `libsteam_api` exports (1047), all 33
   interfaces with their accessors and version strings, 196 callback structs, the plain structs,
-  112 enums, 141 constants and 78 typedefs. Nothing is a demo subset.
+  112 enums, 163 constants and 78 typedefs. Nothing is a demo subset.
 - **Faithful.** Valve's C and C++ names throughout, so the
   [Steamworks API reference](https://partner.steamgames.com/doc/api) applies as written.
 - **ABI-checked.** A clang probe measures every size, member alignment, field offset, enumerator,
   constant, flat function signature and interface version string on macOS (arm64, x86_64), Windows
   (x64, x86), Linux (x86_64, i686, arm64) and Android (arm64); the bindings are verified against
-  all of them at compile time with dmd and ldc2.
+  all of them at compile time with dmd and ldc2. Independently, dmd and ldc2 describe every D
+  declaration for each target and clang checks the description against the headers (exact field
+  and signature types, layouts, values, vtable order, completeness in both directions), and the
+  symbols the linked configuration references are checked against each platform's library.
 - **Two linking modes.** Load `libsteam_api` at runtime (the default) or link it directly, with
   the same code.
 - **Standalone.** No dependencies beyond druntime and Phobos; every raw function is
@@ -253,6 +256,13 @@ each). Call `runFrame()` once per frame.
   `g_pSteamClientGameServer` variable. They are listed in `steamworksUnboundExports`.
 - `ISteamMusicRemote`, `ISteamGameCoordinator` and `ISteamAppTicket` have no flat API (their
   version strings are still provided); the PS3 headers are obsolete.
+- C++-only conveniences: the `CCallback`/`CCallResult` templates (use `CCallbackBase`, manual
+  dispatch or the D dispatcher), the `SteamUser()`-style inline accessors of the C++ API (the flat
+  `SteamAPI_SteamUser()` family returns the same interfaces), the `*Render` string helper classes,
+  the `STEAM_CALLBACK`-style macros, and the `SteamNetworkingMessage_t::Get*` compatibility
+  getters. Interface methods with no flat function (`ISteamClient::RunFrame` and other internal or
+  deprecated methods) cannot be called from C. The `abiVerify` section of
+  `tools/gen/overrides.json` lists every such header declaration with its reason.
 - `SteamDatagramRelayAuthTicket` is opaque: the SDK only forward-declares it.
 - The encrypted app ticket library (`sdkencryptedappticket`) is a separate library.
 
@@ -271,12 +281,29 @@ Generation needs dub, a D compiler, `clang++` (for the ABI probe) and `dfmt`.
   `tools/gen/overrides.json` holds every correction and header-only addition, each with the header
   it comes from and the reason. Generated files start with a "do not edit" banner;
   `tools/gen/generate.sh --check` fails if any is stale.
-- `tests/abi/check.sh` compiles the clang-measured expectations against the bindings natively and
-  for all eight targets (ldc2 cross-compilation), in both configurations.
-- `tests/exports/check.sh` compares the bindings with the export table of every redistributable
-  library.
-- `tests/cabi/run.sh` calls clang-compiled stand-ins of the functions that pass structs by value,
-  checking the calling convention with dmd and ldc2 (and x86_64 under Rosetta on Apple silicon).
+- `tools/check-abi.sh [step...]` runs every ABI and symbol check, one step at a time:
+  - `generated`: the generated modules and ABI expectations are current.
+  - `probe` (`tests/abi/check.sh`): the clang-measured expectations compiled against the bindings
+    natively and for all eight targets (ldc2 cross-compilation), in both configurations.
+  - `native` (`tests/abi/native/run.sh`): the probe compiled and run natively (and as x86_64 under
+    Rosetta), compared value by value with a D program built with dmd and ldc2.
+  - `verify` (`steamworks-gen --verify`): `tests/abi/reflect/dump.d` makes dmd and ldc2 describe
+    every declaration of `steamworks.raw` for each target, and the generator turns the
+    description into C++ static_asserts compiled against the headers with clang: sizes,
+    alignments and offsets, exact field, alias and signature types (`long` and `long long`
+    compare by size), enumerator and constant values, vtable slots (Itanium and MSVC order) and
+    `extern(C++)`/`extern(C)` linkage. It compares clang's AST and macro table with the
+    description in both directions, so a header declaration missing from D, or a D declaration
+    missing from the headers, fails unless the `abiVerify` section of `tools/gen/overrides.json`
+    justifies it (stale entries fail too). `tests/abi/reflect/linkrefs.d` then shows, for every
+    target, that the linked configuration references exactly the declared functions under the
+    names the target's `libsteam_api` (or import library) exports, and that every export is bound
+    or listed in `unboundExports`. Pass `--verify-dir DIR` to keep the generated C++ checks.
+  - `exports` (`tests/exports/check.sh`): every redistributable library's export table
+    (including the DLLs) against the bound functions.
+  - `cabi` (`tests/cabi/run.sh`): calls into clang-compiled stand-ins of the functions that pass
+    structs by value, checking the calling convention with dmd and ldc2 (and x86_64 under Rosetta
+    on Apple silicon).
 - `tests/smoke` runs against the real library without a Steam client: symbol resolution,
   initialization failure handling, the library's struct helpers, C++ virtual calls from the library
   into D, and callback registration.
