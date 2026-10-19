@@ -14,10 +14,15 @@ SDK 1.65 and checked against the SDK headers for every platform Valve ships `lib
   all of them at compile time with dmd and ldc2.
 - **Two linking modes.** Load `libsteam_api` at runtime (the default) or link it directly, with
   the same code.
-- **Standalone.** No dependencies beyond druntime; every function is `nothrow @nogc`.
+- **Standalone.** No dependencies beyond druntime and Phobos; every raw function is
+  `nothrow @nogc`.
+- **A thin D layer** on top: initialization that reports Steam's error message, the
+  `SteamUser()`-style accessors, a per-frame callback and call-result dispatcher (with a
+  `nothrow @nogc` variant), delegate-based server browser responses, and Steam ID and string
+  conversions. The raw API stays fully usable alongside it.
 
-The package exposes the raw flat API (`steamworks.raw`). It is the foundation a higher-level D
-API can be built on, and usable directly by anyone who knows the C API.
+`steamworks.raw` is the complete flat API, usable directly by anyone who knows the C API; the
+D layer only removes the boilerplate around it.
 
 ## Installation
 
@@ -79,50 +84,103 @@ must sit next to the executable at runtime; on Linux add an rpath such as `$ORIG
 ## Usage
 
 ```d
-import core.stdc.string : strlen;
-import std.stdio : writefln;
+import std.stdio : writefln, writeln;
 import steamworks;
 
 void main()
 {
     if (loadSteamworks() != SteamworksLoadStatus.success)
-        return;
+        return;                       // no library: run without Steam
 
-    SteamAPI_ManualDispatch_Init();
-    SteamErrMsg err = 0;
-    if (SteamAPI_InitEx(&err) != k_ESteamAPIInitResult_OK)
+    const init = steamInit();         // SteamAPI_InitEx, then manual dispatch
+    if (!init)
     {
-        writefln("Steam unavailable: %s", err.ptr[0 .. strlen(err.ptr)]);
+        writeln("Steam unavailable: ", init.message);
         return;
     }
-    scope (exit) SteamAPI_Shutdown();
+    scope (exit) steamShutdown();
 
-    const id = CSteamID(SteamAPI_ISteamUser_GetSteamID(SteamAPI_SteamUser()));
-    const name = SteamAPI_ISteamFriends_GetPersonaName(SteamAPI_SteamFriends());
-    writefln("%s (account %s)", name[0 .. strlen(name)], id.GetAccountID());
+    const me = CSteamID(SteamAPI_ISteamUser_GetSteamID(SteamUser()));
+    writefln("%s %s", fromCString(SteamAPI_ISteamFriends_GetPersonaName(SteamFriends())),
+        me.toSteam3String);           // "[U:1:22202]"
 
-    const pipe = SteamAPI_GetHSteamPipe();
+    auto steam = CallbackDispatcher.forClient();
+    auto token = steam.register((ref const PersonaStateChange_t e) {
+        writefln("%s changed", CSteamID(e.m_ulSteamID).toSteam3String);
+    });
+    steam.call!SteamAPI_ISteamUserStats_FindLeaderboard(SteamUserStats(), "Feet Traveled")
+        .then((ref r, ioFailure) {    // r is a LeaderboardFindResult_t
+            if (!ioFailure && r.m_bLeaderboardFound) { /* ... */ }
+        });
+
     foreach (frame; 0 .. 600)
     {
-        SteamAPI_ManualDispatch_RunFrame(pipe);
-        CallbackMsg_t msg;
-        while (SteamAPI_ManualDispatch_GetNextCallback(pipe, &msg))
-        {
-            if (msg.m_iCallback == PersonaStateChange_t.k_iCallback)
-            {
-                auto change = cast(PersonaStateChange_t*) msg.m_pubParam;
-                // ...
-            }
-            SteamAPI_ManualDispatch_FreeLastCallback(pipe);
-        }
+        steam.runFrame();             // callbacks and call results are delivered here
         // render a frame
     }
+    steam.unregister(token);
 }
 ```
 
-`examples/manual-dispatch` is a complete program, including an asynchronous call result. During
-development put a `steam_appid.txt` with your app ID (480, Spacewar, for testing) in the working
-directory.
+During development put a `steam_appid.txt` with your app ID (480, Spacewar, for testing) in the
+working directory. `examples/dispatcher` is a complete program; `examples/manual-dispatch` does
+the same with the raw API only.
+
+### Initialization
+
+`steamInit()` calls `SteamAPI_InitEx`, which checks that the user's Steam client supports every
+interface version these bindings call, and returns a `SteamInitResult` holding the
+`ESteamAPIInitResult` and Steam's message; it converts to `true` on success. `steamInitOrThrow()`
+throws a `SteamInitException` instead. Game servers use `steamGameServerInit(ip, gamePort,
+queryPort, serverMode, version)` and `steamGameServerShutdown()`. After a successful
+initialization both select manual dispatch (`SteamAPI_ManualDispatch_Init`, which steam_api.h
+requires after `SteamAPI_Init`); pass `SteamDispatchMode.automatic` to keep Steam's own
+`SteamAPI_RunCallbacks` dispatch. `steamRestartAppIfNecessary(appID)` wraps
+`SteamAPI_RestartAppIfNecessary`. With the dynamic configuration, calling these before
+`loadSteamworks()` reports an error rather than crashing.
+
+The accessors carry their C++ names: `SteamUser()`, `SteamFriends()`, `SteamMatchmaking()`,
+`SteamNetworkingSockets()`, ..., and `SteamGameServer()`, `SteamGameServerNetworkingSockets()`,
+... for game servers. Each returns the raw interface pointer to pass as `self`, or null before
+initialization.
+
+### Callbacks and call results
+
+`CallbackDispatcher` pumps one Steam pipe: `forClient()` uses `SteamAPI_GetHSteamPipe()`,
+`forGameServer()` uses `SteamGameServer_GetHSteamPipe()` (a process that is both needs one of
+each). Call `runFrame()` once per frame.
+
+- `register!T(handler)` or `register(handler)` (type inferred from a `(ref const T)` parameter)
+  subscribes a delegate or function pointer to callback struct `T`; it returns a `CallbackToken`
+  for `unregister`. `registerRaw` receives Steam's `CallbackMsg_t` for one id or for all.
+- `callResult!T(call, handler)` waits for the `SteamAPICall_t` returned by an asynchronous
+  function; the handler gets `(ref const T result, bool ioFailure)` once. `call!fn(args).then(...)`
+  makes the call and takes `T` from the function's `SteamCallResult` attribute. `cancel` stops
+  waiting; an invalid handle registers nothing.
+- Handlers may register, unregister and cancel (themselves included) while running.
+  `runFrame` never allocates from the GC; handlers live in `malloc` memory scanned by the GC.
+- `CallbackDispatcher` accepts any handler: if one throws, the others for the same callback
+  still run, the callback is freed, and the exception (chained with any others) leaves
+  `runFrame`; queued callbacks wait for the next frame. `NogcCallbackDispatcher` accepts only
+  `nothrow @nogc` handlers, which makes `runFrame` `nothrow @nogc`.
+- The dispatcher reads from a `CallbackSource` interface, Steam's manual dispatch by default;
+  tests inject synthetic callbacks and call results through it.
+
+### Other conveniences
+
+- `steamworks.matchmaking`: `ServerListResponse`, `PingResponse`, `PlayersResponse` and
+  `RulesResponse` implement the C++ `ISteamMatchmaking*Response` interfaces with delegates, for
+  `ISteamMatchmakingServers`. Keep the object referenced from D while Steam holds it; the
+  delegates are `nothrow`.
+- `steamworks.steamid`: `id.accountID`, `id.universe`, `id.accountType`, `id.accountInstance`,
+  `toSteam3String` / `formatSteamID` (`"[U:1:22202]"`, `@nogc` into a buffer),
+  `toSteam2String` (`"STEAM_1:0:11101"`) and `parseSteamID` (decimal, Steam3 or Steam2 text).
+- `steamworks.networking`: `ipAddrToString`, `parseIPAddr`, `identityToString`,
+  `parseIdentity` and buffer-based `formatIPAddr` / `formatIdentity`, using Steam's own
+  formatting (available once Steam is initialized).
+- `steamworks.strings`: `fromCString` borrows a returned `const(char)*` or a `char[N]` field as a
+  slice, `idupCString` copies it, and `tempCString` makes a NUL-terminated copy of a D string
+  without the GC.
 
 ## How the C API maps to D
 
@@ -165,6 +223,13 @@ directory.
 | --------------------------------------- | --------------------------------------------------------------------------- |
 | `steamworks`                            | Imports everything below.                                                   |
 | `steamworks.loader`                     | `loadSteamworks`, `unloadSteamworks`, `SteamworksLoadStatus`.               |
+| `steamworks.lifecycle`                  | `steamInit`, `steamGameServerInit`, shutdown, `steamRestartAppIfNecessary`. |
+| `steamworks.accessors`                  | `SteamUser()`, `SteamFriends()`, ... and the `SteamGameServer*()` ones.     |
+| `steamworks.dispatch`                   | `CallbackDispatcher`, `NogcCallbackDispatcher`, `CallbackSource`.           |
+| `steamworks.matchmaking`                | Delegate-based `ISteamMatchmaking*Response` implementations.                |
+| `steamworks.steamid`                    | `CSteamID` accessors, rendering and parsing.                                |
+| `steamworks.networking`                 | Text for `SteamNetworkingIPAddr` and `SteamNetworkingIdentity`.             |
+| `steamworks.strings`                    | `fromCString`, `idupCString`, `tempCString`.                                |
 | `steamworks.raw`                        | The complete flat API (public imports of the modules below).                |
 | `steamworks.raw.types`                  | Typedefs (`AppId_t`, `SteamAPICall_t`, function pointer types, ...).        |
 | `steamworks.raw.consts`                 | Constants.                                                                  |
@@ -215,6 +280,13 @@ Generation needs dub, a D compiler, `clang++` (for the ABI probe) and `dfmt`.
 - `tests/smoke` runs against the real library without a Steam client: symbol resolution,
   initialization failure handling, the library's struct helpers, C++ virtual calls from the library
   into D, and callback registration.
+- `tests/vtable/run.sh` calls the D response classes from clang-compiled C++ through the SDK's own
+  class declarations (dmd, ldc2, and x86_64 under Rosetta on Apple silicon).
+- `tests/layer` runs the D layer against the real library without a Steam client: initialization
+  failures, idle dispatchers and the networking conversions' behaviour before initialization.
+- The dispatcher's unit tests drive it with a fake `CallbackSource`: ordering, reentrant
+  registration and cancellation, call-result sizing and failures, exceptions, and no GC
+  allocation in `runFrame`.
 
 ## License
 
