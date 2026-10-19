@@ -306,8 +306,9 @@ directory.
   `SteamAPI_SteamUser_v023()`).
 - **Header-inline functions** the library does not export are provided in D:
   `SteamAPI_Init`, `SteamAPI_InitEx`, `SteamGameServer_Init`, `SteamGameServer_InitEx`,
-  `SteamGameServer_ReleaseCurrentThreadMemory`, `SteamClient`, `SteamGameServerClient` and
-  `BIsHTTPStatusSuccess`, plus the trivial inline members of `CSteamID`, `CGameID`,
+  `SteamGameServer_ReleaseCurrentThreadMemory`, `SteamClient`, `SteamGameServerClient`,
+  `BIsHTTPStatusSuccess`, and the POP ID conversions `CalculateSteamNetworkingPOPIDFromString`
+  and `GetSteamNetworkingLocationPOPStringFromID`, plus the trivial inline members of `CSteamID`, `CGameID`,
   `SteamIPAddress_t`, `SteamNetworkingIPAddr`, `SteamNetworkingIdentity` and
   `SteamNetworkingConfigValue_t`.
 - **Steam IDs** cross the flat API as `uint64_steamid` (and `uint64_gameid`); `CSteamID` and
@@ -357,7 +358,7 @@ directory.
 | `steamworks.raw.isteam*`, `steam_api`, `steam_gameserver`, `steam*types`, ... | Flat functions, one module per SDK header. |
 | `steamworks.raw.steamid`                | `CSteamID`, `CGameID`.                                                      |
 | `steamworks.raw.manual`                 | Hand-written union and C++ class types.                                     |
-| `steamworks.raw.helpers`                | The header-inline init functions, `SteamClient`, `BIsHTTPStatusSuccess`.    |
+| `steamworks.raw.helpers`                | The header-inline init functions, `SteamClient`, `BIsHTTPStatusSuccess`, POP ID conversions. |
 | `steamworks.raw.platform`               | `VALVE_CALLBACK_PACK`, `callbackAlign`, `packAlign`.                        |
 | `steamworks.raw.attributes`             | `SteamCallResult`, `SteamCallback` UDAs.                                    |
 | `steamworks.raw.symbols`                | The list of every bound function, used by the loader and tests.             |

@@ -392,8 +392,6 @@
       "record SteamNetworkingIPAddrRender": "C++ convenience class wrapping a char buffer and SteamNetworkingIPAddr::ToString; D callers pass their own buffer to SteamAPI_SteamNetworkingIPAddr_ToString.",
       "record SteamNetworkingIdentityRender": "C++ convenience class wrapping a char buffer and SteamNetworkingIdentity::ToString; D callers pass their own buffer to SteamAPI_SteamNetworkingIdentity_ToString.",
       "record SteamNetworkingPOPIDRender": "C++ convenience class wrapping a char buffer and GetSteamNetworkingLocationPOPStringFromID.",
-      "template GetSteamNetworkingLocationPOPStringFromID": "C++ inline template converting a SteamNetworkingPOPID to text; D code can do the same with the byte shifts of the header.",
-      "inline-function CalculateSteamNetworkingPOPIDFromString": "C++ inline helper packing a POP name into a SteamNetworkingPOPID; not part of the library's ABI.",
       "template CCallback": "C++ callback helper template built on CCallbackBase and SteamAPI_RegisterCallback/RegisterCallResult, which the bindings declare; D code subclasses CCallbackBase or uses manual dispatch.",
       "template CCallbackImpl": "C++ callback helper template built on CCallbackBase and SteamAPI_RegisterCallback/RegisterCallResult, which the bindings declare; D code subclasses CCallbackBase or uses manual dispatch.",
       "template CCallResult": "C++ callback helper template built on CCallbackBase and SteamAPI_RegisterCallback/RegisterCallResult, which the bindings declare; D code subclasses CCallbackBase or uses manual dispatch.",

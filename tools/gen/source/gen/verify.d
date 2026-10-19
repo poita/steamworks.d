@@ -1232,8 +1232,21 @@ Comparison compare(const ref DInventory d, const ref CppInventory c, ref VerifyC
     foreach (name, _; c.typedefs)
         if (name !in d.aliases && name !in d.aggregates && name !in d.enums)
             cppOnly("typedef " ~ name);
+    // A C++ template is matched by a D template of the same name; its
+    // instantiations have no single type to compare.
+    bool[string] dTemplates;
+    foreach (g; d.others)
+        dTemplates[g] = true;
     foreach (name, _; c.templates)
-        cppOnly("template " ~ name);
+    {
+        if (name in dTemplates)
+        {
+            ++r.matched;
+            dTemplates.remove(name);
+        }
+        else
+            cppOnly("template " ~ name);
+    }
 
     // Functions.
     bool[string] dFuncs;
@@ -1259,7 +1272,8 @@ Comparison compare(const ref DInventory d, const ref CppInventory c, ref VerifyC
             cppOnly((cf.externC ? "function " : "inline-function ") ~ name);
 
     foreach (g; d.others)
-        dOnly("declaration " ~ g);
+        if (g in dTemplates)
+            dOnly("declaration " ~ g);
 
     // Unsupported D types anywhere make the C++ check fail to compile; name them.
     foreach (line; o.lineSplitter)
@@ -1278,6 +1292,22 @@ string signedLiteral(string value) @safe pure
     if (value == long.min.to!string)
         return "(-9223372036854775807LL - 1)";
     return value;
+}
+
+unittest
+{
+    // A D template satisfies the C++ template of the same name; other D
+    // templates and unmatched C++ templates are reported.
+    NameMap names;
+    auto d = readDump("M\tm\nG\tT1\nG\tT2\nZ\n", names);
+    CppInventory c;
+    c.templates = ["T1": true, "T3": true];
+    VerifyConfig cfg;
+    const r = compare(d, c, cfg, false);
+    assert(r.matched == 1);
+    assert(r.problems.length == 2);
+    assert(r.problems.canFind("missing in D: template T3"));
+    assert(r.problems.canFind("not in the headers: declaration T2"));
 }
 
 unittest

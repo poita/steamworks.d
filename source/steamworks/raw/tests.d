@@ -212,6 +212,39 @@ unittest
     static assert(typeof(opf).Callbacks.length == 1);
 }
 
+/// POP IDs pack a 3-character code as 0x00aabbcc, the "dev" constant included.
+unittest
+{
+    assert(CalculateSteamNetworkingPOPIDFromString("dev") == k_SteamDatagramPOPID_dev);
+    assert(CalculateSteamNetworkingPOPIDFromString("iad") == 0x69_6164);
+    char[5] code;
+    GetSteamNetworkingLocationPOPStringFromID(CalculateSteamNetworkingPOPIDFromString("iad"), code);
+    assert(code == "iad\0\0");
+}
+
+/// A 4-character code "abcd" packs as 0xddaabbcc and renders back.
+unittest
+{
+    const id = CalculateSteamNetworkingPOPIDFromString("abcd");
+    assert(id == 0x6461_6263);
+    char[8] code = 'x';
+    GetSteamNetworkingLocationPOPStringFromID(id, code);
+    assert(code[0 .. 5] == "abcd\0" && code[5] == 'x');
+}
+
+/// Short codes stop at the terminator instead of reading past it.
+unittest
+{
+    assert(CalculateSteamNetworkingPOPIDFromString("") == 0);
+    // Bytes after the terminator are never read.
+    immutable char[3] one = ['a', '\0', 'z'];
+    assert(CalculateSteamNetworkingPOPIDFromString(one.ptr) == 0x61_0000);
+    immutable char[4] two = ['a', 'b', '\0', 'z'];
+    assert(CalculateSteamNetworkingPOPIDFromString(two.ptr) == 0x61_6200);
+    // High bytes are taken unsigned.
+    assert(CalculateSteamNetworkingPOPIDFromString("\xff\xfe\xfd") == 0xff_fefd);
+}
+
 /// The C++ callback interfaces are subclassable from D.
 unittest
 {

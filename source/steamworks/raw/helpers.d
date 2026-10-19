@@ -1,12 +1,13 @@
-/// The inline functions of steam_api.h, steam_gameserver.h, isteamclient.h
-/// and steamhttpenums.h, which the library does not export.
+/// The inline functions of steam_api.h, steam_gameserver.h, isteamclient.h,
+/// steamhttpenums.h and steamnetworkingtypes.h, which the library does not
+/// export.
 module steamworks.raw.helpers;
 
 import steamworks.raw.enums : EHTTPStatusCode, ESteamAPIInitResult, EServerMode;
 import steamworks.raw.interfaces;
 import steamworks.raw.steam_api;
 import steamworks.raw.steam_gameserver;
-import steamworks.raw.types : SteamErrMsg;
+import steamworks.raw.types : SteamErrMsg, SteamNetworkingPOPID;
 
 /// Interface versions SteamAPI_InitEx asks the client to support, as the
 /// NUL-separated, double-NUL-terminated list steam_api.h builds.
@@ -102,6 +103,47 @@ ISteamClient* SteamGameServerClient() nothrow @nogc
 bool BIsHTTPStatusSuccess(EHTTPStatusCode eStatus) @safe pure nothrow @nogc
 {
     return eStatus >= 200 && eStatus <= 299;
+}
+
+/// Converts a 3- or 4-character data center (POP) code such as `"iad"` to the
+/// `SteamNetworkingPOPID` that ISteamNetworkingUtils' GetPOPList,
+/// GetPingToDataCenter and GetDirectPingToPOP use. `"abc"` packs as
+/// `0x00aabbcc` and `"abcd"` as `0xddaabbcc`; bytes after the terminator of a
+/// shorter string are not read, and the empty string gives 0.
+///
+/// Mirrors the inline `CalculateSteamNetworkingPOPIDFromString` of
+/// steamnetworkingtypes.h.
+SteamNetworkingPOPID CalculateSteamNetworkingPOPIDFromString(const(char)* pszCode) @system pure nothrow @nogc
+{
+    SteamNetworkingPOPID result = cast(uint) cast(ubyte) pszCode[0] << 16U;
+    if (result && pszCode[1])
+    {
+        result |= cast(uint) cast(ubyte) pszCode[1] << 8U;
+        if (pszCode[2])
+            result |= cast(uint) cast(ubyte) pszCode[2] | (cast(uint) cast(ubyte) pszCode[3] << 24U);
+    }
+    return result;
+}
+
+/// Writes the code of a `SteamNetworkingPOPID` to `szCode` with a terminating
+/// NUL: 3 characters and two NULs for a 3-character code, otherwise 4 and one.
+///
+/// Mirrors the inline template `GetSteamNetworkingLocationPOPStringFromID` of
+/// steamnetworkingtypes.h.
+void GetSteamNetworkingLocationPOPStringFromID(size_t N)(SteamNetworkingPOPID id, ref char[N] szCode) @safe pure nothrow @nogc
+{
+    static assert(N >= 5, "Fixed-size buffer not big enough to hold SDR POP ID");
+    szCode[0] = cast(char)(id >> 16U);
+    szCode[1] = cast(char)(id >> 8U);
+    szCode[2] = cast(char) id;
+    szCode[3] = cast(char)(id >> 24U);
+    szCode[4] = 0;
+}
+
+unittest
+{
+    char[4] small;
+    static assert(!__traits(compiles, GetSteamNetworkingLocationPOPStringFromID(1, small)));
 }
 
 unittest
