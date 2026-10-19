@@ -1,8 +1,9 @@
 /// Messages over `ISteamNetworkingSockets` connections.
 ///
 ///   networking                  connects two sockets inside this process
-///                               (CreateSocketPair) and sends messages both
-///                               ways; needs no second machine
+///                               (CreateSocketPair), sends a batch of messages
+///                               (SendMessages) and replies one by one; needs
+///                               no second machine
 ///   networking --listen         accepts peer-to-peer connections through the
 ///                               Steam relay network and echoes every message
 ///   networking --connect ID     connects to a listening peer by Steam ID
@@ -85,8 +86,10 @@ void runLoopback(ref CallbackDispatcher steam)
                 k_ESteamNetConnectionEnd_App_Generic, "done", false);
     }
 
-    foreach (i; 0 .. 5)
-        send(sockets, a, format("ping %s", i));
+    string[5] pings;
+    foreach (i, ref ping; pings)
+        ping = format("ping %s", i);
+    sendBatch(sockets, a, pings[]);
     int received;
     foreach (_; 0 .. 100)
     {
@@ -215,6 +218,29 @@ void send(ISteamNetworkingSockets* sockets, HSteamNetConnection conn, const(char
             cast(uint) text.length, k_nSteamNetworkingSend_Reliable, null);
     if (r != k_EResultOK)
         writefln("send failed: %s", r);
+}
+
+/// Sends `texts` reliably on `conn` as one batch with `SendMessages`. With
+/// bDeleteFailedMessages true the library takes ownership of every message,
+/// including those it fails to queue, so none needs releasing here.
+void sendBatch(ISteamNetworkingSockets* sockets, HSteamNetConnection conn, const(char[])[] texts)
+{
+    auto messages = new SteamNetworkingMessage_t*[texts.length];
+    foreach (i, text; texts)
+    {
+        auto m = SteamAPI_ISteamNetworkingUtils_AllocateMessage(SteamNetworkingUtils(), cast(int) text.length);
+        (cast(char*) m.m_pData)[0 .. text.length] = text[];
+        m.m_conn = conn;
+        m.m_nFlags = k_nSteamNetworkingSend_Reliable;
+        messages[i] = m;
+    }
+    auto results = new long[texts.length];
+    SteamAPI_ISteamNetworkingSockets_SendMessages(sockets, cast(int) messages.length, messages.ptr, results.ptr, true);
+    // Each result is the message number, a negative EResult, or 0 for a
+    // message not attempted after an earlier one on the connection failed.
+    foreach (i, r; results)
+        if (r <= 0)
+            writefln("message %s not sent: %s", i, r == 0 ? "not attempted" : format("%s", cast(EResult)-r));
 }
 
 /// Passes every message waiting on `conn` to `handler`, then releases it.

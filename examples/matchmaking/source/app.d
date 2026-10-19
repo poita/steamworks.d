@@ -240,8 +240,10 @@ final class ServerBrowser
     {
         auto s = SteamAPI_ISteamMatchmakingServers_GetServerDetails(servers, req, i);
         const address = fromCString(SteamAPI_servernetadr_t_GetConnectionAddressString(&s.m_NetAdr));
-        say("%-40s %-16s %2s/%-2s %4sms %s", fromCString(s.m_szServerName), fromCString(s.m_szMap),
-                s.m_nPlayers, s.m_nMaxPlayers, s.m_nPing, address);
+        // The friend counts: friends on the server now, and friends who have played on it.
+        say("%-40s %-16s %2s/%-2s %4sms friends %s/%s %s", fromCString(s.m_szServerName),
+                fromCString(s.m_szMap), s.m_nPlayers, s.m_nMaxPlayers, s.m_nPing,
+                s.m_nCurrentFriendCount, s.m_nTotalFriendCount, address);
     }
 
     private void onRefreshComplete(HServerListRequest req, EMatchMakingServerResponse r) nothrow
