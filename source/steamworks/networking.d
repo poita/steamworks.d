@@ -1,26 +1,40 @@
 /// Text conversions for `SteamNetworkingIPAddr` and `SteamNetworkingIdentity`
-/// with D strings, using the library's own formatting and parsing
-/// (`SteamAPI_SteamNetworkingIPAddr_ToString` and friends), so the text is
-/// exactly what Steam produces and accepts.
+/// with D strings, using Steam's own formatting and parsing (the
+/// `ISteamNetworkingUtils` methods behind the structs' `ToString` and
+/// `ParseString`), so the text is exactly what Steam produces and accepts.
 ///
-/// These work without Steam running or initialized, but with the "dynamic"
-/// configuration the library must be loaded.
+/// Steam provides these through `ISteamNetworkingUtils`, which exists only
+/// after `steamInit` or `steamGameServerInit` succeeds. Before that (or with
+/// the library not loaded) nothing is formatted and nothing parses.
 module steamworks.networking;
 
+import steamworks.raw.interfaces : ISteamNetworkingUtils;
+import steamworks.raw.isteamnetworkingutils;
 import steamworks.raw.manual : SteamNetworkingIdentity, SteamNetworkingIPAddr;
-import steamworks.raw.steamnetworkingtypes;
 import steamworks.strings : fromCString, tempCString;
 
+/// Steam's networking utilities, or null when unavailable. Prefers the
+/// client's interface and falls back to the game server's, as the SDK does.
+private ISteamNetworkingUtils* utils() nothrow @nogc
+{
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamNetworkingUtils_SteamAPI_v004 is null)
+            return null;
+    return SteamAPI_SteamNetworkingUtils_SteamAPI();
+}
+
 /// Renders `addr` into `buffer` ("192.168.0.1:27015", "[::1]:27015", or
-/// without the port), returning the written part. A buffer shorter than
+/// without the port), returning the written part (empty when Steam's
+/// networking utilities are unavailable). A buffer shorter than
 /// `SteamNetworkingIPAddr.k_cchMaxString` may truncate the text.
 char[] formatIPAddr(ref const SteamNetworkingIPAddr addr, return scope char[] buffer, bool withPort = true) nothrow @nogc
 {
     if (!buffer.length)
         return buffer;
     buffer[0] = '\0';
-    SteamAPI_SteamNetworkingIPAddr_ToString(cast(SteamNetworkingIPAddr*)&addr, buffer.ptr,
-            cast(uint) buffer.length, withPort);
+    if (auto u = utils())
+        SteamAPI_ISteamNetworkingUtils_SteamNetworkingIPAddr_ToString(u, addr, buffer.ptr,
+                cast(uint) buffer.length, withPort);
     return fromCString(buffer);
 }
 
@@ -32,12 +46,14 @@ string ipAddrToString(ref const SteamNetworkingIPAddr addr, bool withPort = true
 }
 
 /// Parses an IPv4 or IPv6 address with an optional port ("1.2.3.4:27015",
-/// "[::1]:27015", "::1"). Returns whether `text` was valid; `addr` is cleared
-/// otherwise.
+/// "[::1]:27015", "::1"). Returns whether `text` was valid (always false when
+/// Steam's networking utilities are unavailable); `addr` is cleared otherwise.
 bool parseIPAddr(scope const(char)[] text, out SteamNetworkingIPAddr addr) nothrow @nogc
 {
     auto s = tempCString(text);
-    if (s.ptr is null || !SteamAPI_SteamNetworkingIPAddr_ParseString(&addr, s.ptr))
+    auto u = utils();
+    if (u is null || s.ptr is null
+            || !SteamAPI_ISteamNetworkingUtils_SteamNetworkingIPAddr_ParseString(u, &addr, s.ptr))
     {
         addr.Clear();
         return false;
@@ -46,15 +62,17 @@ bool parseIPAddr(scope const(char)[] text, out SteamNetworkingIPAddr addr) nothr
 }
 
 /// Renders `identity` into `buffer` ("steamid:76561197960287930",
-/// "ip:1.2.3.4:27015", "str:name", ...), returning the written part. A buffer
+/// "ip:1.2.3.4:27015", "str:name", ...), returning the written part (empty
+/// when Steam's networking utilities are unavailable). A buffer
 /// shorter than `SteamNetworkingIdentity.k_cchMaxString` may truncate the text.
 char[] formatIdentity(ref const SteamNetworkingIdentity identity, return scope char[] buffer) nothrow @nogc
 {
     if (!buffer.length)
         return buffer;
     buffer[0] = '\0';
-    SteamAPI_SteamNetworkingIdentity_ToString(cast(SteamNetworkingIdentity*)&identity,
-            buffer.ptr, cast(uint) buffer.length);
+    if (auto u = utils())
+        SteamAPI_ISteamNetworkingUtils_SteamNetworkingIdentity_ToString(u, identity, buffer.ptr,
+                cast(uint) buffer.length);
     return fromCString(buffer);
 }
 
@@ -66,11 +84,14 @@ string identityToString(ref const SteamNetworkingIdentity identity) nothrow
 }
 
 /// Parses an identity in the form `formatIdentity` produces. Returns whether
-/// `text` was valid; `identity` is cleared otherwise.
+/// `text` was valid (always false when Steam's networking utilities are
+/// unavailable); `identity` is cleared otherwise.
 bool parseIdentity(scope const(char)[] text, out SteamNetworkingIdentity identity) nothrow @nogc
 {
     auto s = tempCString(text);
-    if (s.ptr is null || !SteamAPI_SteamNetworkingIdentity_ParseString(&identity, s.ptr))
+    auto u = utils();
+    if (u is null || s.ptr is null
+            || !SteamAPI_ISteamNetworkingUtils_SteamNetworkingIdentity_ParseString(u, &identity, s.ptr))
     {
         identity.Clear();
         return false;
@@ -85,4 +106,25 @@ unittest
     SteamNetworkingIdentity identity;
     assert(formatIPAddr(addr, null).length == 0);
     assert(formatIdentity(identity, null).length == 0);
+}
+
+/// Without Steam's networking utilities (library not loaded, or Steam not
+/// initialized) nothing is formatted or parsed.
+version (SteamworksDynamic) unittest
+{
+    import steamworks.loader : isSteamworksLoaded;
+
+    if (isSteamworksLoaded())
+        return;
+    SteamNetworkingIPAddr addr;
+    addr.SetIPv4(0x7F00_0001, 80);
+    char[64] buffer = 'x';
+    assert(formatIPAddr(addr, buffer[]).length == 0);
+    assert(ipAddrToString(addr).length == 0);
+    assert(!parseIPAddr("1.2.3.4", addr) && addr.IsIPv6AllZeros());
+    SteamNetworkingIdentity identity;
+    identity.SetSteamID64(76_561_197_960_287_930UL);
+    assert(formatIdentity(identity, buffer[]).length == 0);
+    assert(identityToString(identity).length == 0);
+    assert(!parseIdentity("steamid:76561197960287930", identity) && identity.IsInvalid());
 }
