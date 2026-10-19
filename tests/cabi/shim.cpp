@@ -79,6 +79,16 @@ S_API void SteamAPI_ISteamInput_SetLEDColor( ISteamInput* self, InputHandle_t in
 	*(uint32 *)self = ( (uint32)nColorR << 24 ) | ( (uint32)nColorG << 16 ) | ( (uint32)nColorB << 8 ) | ( nFlags & 0xff );
 }
 
+// `char` is signed on most targets, so a negative gain must arrive sign-extended.
+extern "C" const int cabi_char_is_signed = (char)-1 < 0;
+S_API void SteamAPI_ISteamInput_TriggerSimpleHapticEvent( ISteamInput* self, InputHandle_t inputHandle, EControllerHapticLocation eHapticLocation, uint8 nIntensity, char nGainDB, uint8 nOtherIntensity, char nOtherGainDB )
+{
+	int *out = (int *)self;
+	out[0] = nGainDB;
+	out[1] = nOtherGainDB;
+	out[2] = nIntensity + nOtherIntensity + (int)eHapticLocation;
+}
+
 S_API bool SteamAPI_ISteamUserStats_GetStatFloat( ISteamUserStats* self, const char * pchName, float * pData )
 {
 	*pData = 0.125f;

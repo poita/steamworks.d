@@ -89,7 +89,7 @@ version (SteamworksDynamic)
         alias PFN_SteamAPI_ISteamInput_TriggerSimpleHapticEvent = void function(ISteamInput* self,
                 InputHandle_t inputHandle,
                 EControllerHapticLocation eHapticLocation,
-                uint8 nIntensity, char nGainDB, uint8 nOtherIntensity, char nOtherGainDB);
+                uint8 nIntensity, c_char nGainDB, uint8 nOtherIntensity, c_char nOtherGainDB);
         alias PFN_SteamAPI_ISteamInput_SetLEDColor = void function(ISteamInput* self,
                 InputHandle_t inputHandle, uint8 nColorR, uint8 nColorG, uint8 nColorB, uint nFlags);
         alias PFN_SteamAPI_ISteamInput_Legacy_TriggerHapticPulse = void function(ISteamInput* self,
@@ -568,7 +568,7 @@ else
         /// See_Also: https://partner.steamgames.com/doc/api/ISteamInput#TriggerSimpleHapticEvent
         void SteamAPI_ISteamInput_TriggerSimpleHapticEvent(ISteamInput* self, InputHandle_t inputHandle,
                 EControllerHapticLocation eHapticLocation,
-                uint8 nIntensity, char nGainDB, uint8 nOtherIntensity, char nOtherGainDB);
+                uint8 nIntensity, c_char nGainDB, uint8 nOtherIntensity, c_char nOtherGainDB);
 
         /// ISteamInput::SetLEDColor (isteaminput.h).
         ///

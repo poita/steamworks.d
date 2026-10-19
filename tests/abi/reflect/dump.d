@@ -166,11 +166,11 @@ template paramTypes(F)
             static foreach (i; 0 .. P.length)
                 {
                 {
-                    string t = cppType!(P[i]);
+                    string t = valueType!(P[i]);
                     static foreach (sc; __traits(getParameterStorageClasses, F, i))
                         {
                         static if (sc == "ref")
-                            t = "sw_r<" ~ t ~ ">";
+                            t = "sw_r<" ~ cppType!(P[i]) ~ ">";
                         else static if (sc == "out" || sc == "lazy")
                             t = "?" ~ sc;
                     }
@@ -189,8 +189,21 @@ template returnType(F)
         static if (hasAttribute(__traits(getFunctionAttributes, F), "ref"))
             enum returnType = "sw_r<" ~ cppType!R ~ ">";
         else
-            enum returnType = cppType!R;
+            enum returnType = valueType!R;
     }
+}
+
+/// The C++ spelling of a parameter or return type. D's `char` passed by value
+/// is an unsigned 8-bit integer, which C's `char` is only on some targets, so
+/// it is spelled `unsigned char` (the check file maps C's by-value `char` to
+/// its signed or unsigned equivalent). Through a `ref`, signedness does not
+/// affect the ABI and the type stays `char`.
+template valueType(T)
+{
+    static if (is(immutable T == immutable char))
+        enum valueType = "unsigned char";
+    else
+        enum valueType = cppType!T;
 }
 
 /// A function type as `sw_fn<R, P...>`; C-style varargs are marked so the

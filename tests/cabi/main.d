@@ -5,6 +5,7 @@ module main;
 
 import core.stdc.stdio : printf;
 import core.stdc.string : strcmp;
+import std.traits : Parameters;
 
 import steamworks.raw.enums;
 import steamworks.raw.isteamcontroller;
@@ -20,6 +21,8 @@ import steamworks.raw.manual;
 import steamworks.raw.structs;
 
 int failures;
+
+extern (C) extern __gshared const int cabi_char_is_signed;
 
 void check(bool ok, const(char)* what, size_t line = __LINE__)
 {
@@ -68,6 +71,17 @@ int main()
     uint led;
     SteamAPI_ISteamInput_SetLEDColor(cast(ISteamInput*)&led, 1, 0x11, 0x22, 0x33, 0x1ff);
     check(led == 0x112233ff, "uint8 arguments");
+
+    // The gains take whatever D type the binding gives C's `char`; on targets
+    // where `char` is signed, -10 must reach C as -10.
+    alias Gain = Parameters!SteamAPI_ISteamInput_TriggerSimpleHapticEvent[4];
+    int[3] haptic;
+    SteamAPI_ISteamInput_TriggerSimpleHapticEvent(cast(ISteamInput*) haptic.ptr, 1,
+            EControllerHapticLocation.k_EControllerHapticLocation_Left, 5, cast(Gain)-10, 6, cast(Gain)-20);
+    const int minus10 = cabi_char_is_signed ? -10 : 246, minus20 = cabi_char_is_signed ? -20 : 236;
+    check(haptic[0] == minus10 && haptic[1] == minus20, "by-value C char arguments keep their sign");
+    check(haptic[2] == 5 + 6 + EControllerHapticLocation.k_EControllerHapticLocation_Left,
+            "uint8 arguments around char arguments");
 
     float f = 0;
     check(SteamAPI_ISteamUserStats_GetStatFloat(null, "x", &f) && f == 0.125f, "float out parameter");

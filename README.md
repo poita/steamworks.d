@@ -317,7 +317,9 @@ directory.
   unqualified, as in C++: `k_EResultOK` and `EResult.k_EResultOK` are the same constant.
 - **C++ references** (`const SteamNetworkingIPAddr &`) are `ref const(SteamNetworkingIPAddr)`;
   strings are `const(char)*`; fixed buffers such as `SteamErrMsg` are static arrays passed by
-  pointer.
+  pointer. A `char` passed by value (the gains of `TriggerSimpleHapticEvent`) is `c_char`,
+  which is `byte` or `ubyte` as C's `char` is signed or unsigned on the target, because D's
+  `char` is always unsigned.
 - **Callback structs** carry `enum int k_iCallback` and the platform's packing (see
   [Platform notes](#platform-notes)).
 - **Structs** default-initialize to all zero bytes, like C++ value-initialization (D would

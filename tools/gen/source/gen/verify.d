@@ -803,17 +803,23 @@ template <class T, sw_size N, bool K> struct sw_n<const T[N], K>
 {
     using type = typename sw_n<const T, K>::type[N];
 };
+// sw_v<T>::type spells a by-value `char` parameter or return as the `signed
+// char` or `unsigned char` the target's `char` is, because the ABI extends it
+// accordingly; the D side spells its own (unsigned) `char` as `unsigned char`.
+template <class T> struct sw_v { using type = T; };
+template <> struct sw_v<char> { using type = sw_if<(char)-1 < 0, signed char, unsigned char>::type; };
+template <class T, bool K> using sw_nv = typename sw_v<typename sw_n<T, K>::type>::type;
 template <class R, class... P, bool K> struct sw_n<R(P...), K>
 {
-    using type = typename sw_n<R, K>::type(typename sw_n<P, K>::type...);
+    using type = sw_nv<R, K>(sw_nv<P, K>...);
 };
 template <class C, class R, class... P, bool K> struct sw_n<R (C::*)(P...), K>
 {
-    using type = typename sw_n<R, K>::type (C::*)(typename sw_n<P, K>::type...);
+    using type = sw_nv<R, K> (C::*)(sw_nv<P, K>...);
 };
 template <class C, class R, class... P, bool K> struct sw_n<R (C::*)(P...) const, K>
 {
-    using type = typename sw_n<R, K>::type (C::*)(typename sw_n<P, K>::type...) const;
+    using type = sw_nv<R, K> (C::*)(sw_nv<P, K>...) const;
 };
 template <class A, class B> using sw_eq = sw_same<typename sw_n<A>::type, typename sw_n<B>::type>;
 template <class A, class B> using sw_eq_nc = sw_same<typename sw_n<A, false>::type, typename sw_n<B, false>::type>;

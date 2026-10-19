@@ -424,6 +424,7 @@
       "constant VALVE_CALLBACK_PACK*": "D equivalents of the headers' VALVE_CALLBACK_PACK_SMALL/LARGE #pragma pack switch (empty macros in C++); tests check them against ValvePackingSentinel_t.",
       "declaration packAlign": "D helper reproducing #pragma pack for one field.",
       "declaration callbackAlign": "D helper reproducing VALVE_CALLBACK_PACK for one field.",
+      "alias c_char": "C's plain `char` as a D integer of the target's signedness, for by-value `char` parameters (D's `char` is always unsigned).",
       "declaration SteamCallResult": "D attribute naming the call result an async function completes with (the headers say so in comments).",
       "declaration SteamCallback": "D attribute naming the callback a function pointer or function triggers.",
       "constant steamworksFunctionCount": "D symbol table used by the dynamic loader and the export checks.",

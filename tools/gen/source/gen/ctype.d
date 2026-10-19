@@ -269,6 +269,10 @@ string toD(const CType t, scope const string[string] typeMap, Use use = Use.valu
         return "extern (C) " ~ toD(*t.fnReturn, typeMap, Use.value,
                 classTypes) ~ " function(" ~ ps.join(", ") ~ ") nothrow";
     }
+    // A by-value `char` parameter needs C's signedness, which D's `char`
+    // (always unsigned) lacks; `c_char` (steamworks.raw.platform) has it.
+    if (use == Use.param && t.base == "char" && !t.ptrs.length && !t.dims.length && !t.isRef && "char" !in typeMap)
+        return t.baseConst ? "const(c_char)" : "c_char";
     string s = dBase(t.base, typeMap);
     const(bool)[] ptrs = t.ptrs;
     if (t.base in classTypes)
@@ -335,6 +339,15 @@ string toCpp(const CType t, string name = null) @safe
     const t = parseCType("const char *");
     assert(t.base == "char" && t.baseConst && t.ptrs == [false]);
     assert(toD(t, null) == "const(char)*");
+}
+
+@safe unittest
+{
+    const t = parseCType("char");
+    assert(toD(t, null, Use.param) == "c_char");
+    assert(toD(t, null, Use.field) == "char");
+    assert(toD(parseCType("char &"), null, Use.param) == "ref char");
+    assert(toD(parseCType("char [8]"), null, Use.param) == "char*");
 }
 
 @safe unittest
