@@ -22,3 +22,5 @@ steam_appid.txt
 /tests/*/bin/
 /tests/*/.dub/
 /.abi-check.log
+/examples/*/bin/
+/examples/*/.dub/

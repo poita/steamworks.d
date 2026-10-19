@@ -1,0 +1,12 @@
+name "manual-dispatch"
+description "Initializes Steam and pumps callbacks with manual dispatch, using the raw flat API"
+license "BSL-1.0"
+targetType "executable"
+targetPath "bin"
+dependency "steamworks" path="../.."
+
+// For local runs: put the SDK's library next to the executable. Games ship it
+// the same way.
+copyFiles "../../sdk/redistributable_bin/osx/libsteam_api.dylib" platform="osx"
+copyFiles "../../sdk/redistributable_bin/linux64/libsteam_api.so" platform="linux-x86_64"
+copyFiles "../../sdk/redistributable_bin/win64/steam_api64.dll" platform="windows-x86_64"
