@@ -298,29 +298,23 @@ version (SteamworksDynamic) version (unittest)
         logCall("manual;");
     }
 
-    /// Points the init functions at fakes for the duration of a test.
-    private struct FakeLifecycle
+    /// Points the init functions at fakes; `uninstallFakes` restores them.
+    private void installFakes(ESteamAPIInitResult result)
     {
-        @disable this(this);
+        callLogLength = 0;
+        fakeInitResult = result;
+        manualDispatchEnabled = false;
+        SteamInternal_SteamAPI_Init = &fakeClientInit;
+        SteamInternal_GameServer_Init_V2 = &fakeServerInit;
+        SteamAPI_ManualDispatch_Init = &fakeManualDispatchInit;
+    }
 
-        static FakeLifecycle install(ESteamAPIInitResult result)
-        {
-            callLogLength = 0;
-            fakeInitResult = result;
-            manualDispatchEnabled = false;
-            SteamInternal_SteamAPI_Init = &fakeClientInit;
-            SteamInternal_GameServer_Init_V2 = &fakeServerInit;
-            SteamAPI_ManualDispatch_Init = &fakeManualDispatchInit;
-            return FakeLifecycle.init;
-        }
-
-        ~this()
-        {
-            SteamInternal_SteamAPI_Init = null;
-            SteamInternal_GameServer_Init_V2 = null;
-            SteamAPI_ManualDispatch_Init = null;
-            manualDispatchEnabled = false;
-        }
+    private void uninstallFakes()
+    {
+        SteamInternal_SteamAPI_Init = null;
+        SteamInternal_GameServer_Init_V2 = null;
+        SteamAPI_ManualDispatch_Init = null;
+        manualDispatchEnabled = false;
     }
 }
 
@@ -332,7 +326,9 @@ version (SteamworksDynamic) unittest
 
     if (isSteamworksLoaded())
         return;
-    auto fake = FakeLifecycle.install(ESteamAPIInitResult.k_ESteamAPIInitResult_OK);
+    installFakes(ESteamAPIInitResult.k_ESteamAPIInitResult_OK);
+    scope (exit)
+        uninstallFakes();
     assert(steamInit());
     assert(lifecycleCalls == "init;manual;", lifecycleCalls);
     assert(steamGameServerInit(0, 1, 2, EServerMode.eServerModeNoAuthentication, "1.2.3.4"));
@@ -346,7 +342,9 @@ version (SteamworksDynamic) unittest
 
     if (isSteamworksLoaded())
         return;
-    auto fake = FakeLifecycle.install(ESteamAPIInitResult.k_ESteamAPIInitResult_NoSteamClient);
+    installFakes(ESteamAPIInitResult.k_ESteamAPIInitResult_NoSteamClient);
+    scope (exit)
+        uninstallFakes();
     const r = steamInit();
     assert(r.result == ESteamAPIInitResult.k_ESteamAPIInitResult_NoSteamClient && r.message == "nope");
     assert(lifecycleCalls == "init;", lifecycleCalls);
@@ -359,7 +357,9 @@ version (SteamworksDynamic) unittest
 
     if (isSteamworksLoaded())
         return;
-    auto fake = FakeLifecycle.install(ESteamAPIInitResult.k_ESteamAPIInitResult_OK);
+    installFakes(ESteamAPIInitResult.k_ESteamAPIInitResult_OK);
+    scope (exit)
+        uninstallFakes();
     assert(steamInit(SteamDispatchMode.automatic));
     assert(steamGameServerInit(0, 1, 2, EServerMode.eServerModeNoAuthentication, "1.2.3.4",
             SteamDispatchMode.automatic));
