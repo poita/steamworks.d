@@ -1397,10 +1397,10 @@ unittest
 unittest
 {
     auto d = CallbackDispatcher(1, new FakeSource);
-    int written;
+    auto written = new int;
     const extra = persona(1, 5);
-    auto pending = d.call!fakeFindByName("Feet", extra, written);
-    assert(pending.handle == 51 && written == 5);
+    const pending = d.call!fakeFindByName("Feet", extra, *written);
+    assert(pending.handle == 51 && *written == 5);
 }
 
 /// runFrame allocates nothing from the GC once handlers are registered.
