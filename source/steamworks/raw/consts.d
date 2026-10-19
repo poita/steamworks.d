@@ -297,3 +297,47 @@ enum int k_iSteamRemotePlayCallbacks = 5700;
 enum int k_iSteamChatCallbacks = 5900;
 /// k_iSteamTimelineCallbacks (steam_api_internal.h).
 enum int k_iSteamTimelineCallbacks = 6000;
+/// k_cchPersonaNameMax (isteamfriends.h).
+enum int k_cchPersonaNameMax = 128;
+/// k_cwchPersonaNameMax (isteamfriends.h).
+enum int k_cwchPersonaNameMax = 32;
+/// k_nMaxLobbyKeyLength (isteammatchmaking.h).
+enum int k_nMaxLobbyKeyLength = 255;
+/// INVALID_HTTPREQUEST_HANDLE (isteamhttp.h).
+enum HTTPRequestHandle INVALID_HTTPREQUEST_HANDLE = 0;
+/// INVALID_HTTPCOOKIE_HANDLE (isteamhttp.h).
+enum HTTPCookieContainerHandle INVALID_HTTPCOOKIE_HANDLE = 0;
+/// INVALID_SCREENSHOT_HANDLE (isteamscreenshots.h).
+enum ScreenshotHandle INVALID_SCREENSHOT_HANDLE = 0;
+/// STEAM_INPUT_MAX_COUNT (isteaminput.h).
+enum int STEAM_INPUT_MAX_COUNT = 16;
+/// STEAM_INPUT_MAX_ANALOG_ACTIONS (isteaminput.h).
+enum int STEAM_INPUT_MAX_ANALOG_ACTIONS = 24;
+/// STEAM_INPUT_MAX_DIGITAL_ACTIONS (isteaminput.h).
+enum int STEAM_INPUT_MAX_DIGITAL_ACTIONS = 256;
+/// STEAM_INPUT_MAX_ORIGINS (isteaminput.h).
+enum int STEAM_INPUT_MAX_ORIGINS = 8;
+/// STEAM_INPUT_MAX_ACTIVE_LAYERS (isteaminput.h).
+enum int STEAM_INPUT_MAX_ACTIVE_LAYERS = 16;
+/// STEAM_INPUT_HANDLE_ALL_CONTROLLERS (isteaminput.h).
+enum uint64 STEAM_INPUT_HANDLE_ALL_CONTROLLERS = 0xFFFFFFFFFFFFFFFF;
+/// STEAM_INPUT_MIN_ANALOG_ACTION_DATA (isteaminput.h).
+enum float STEAM_INPUT_MIN_ANALOG_ACTION_DATA = -1.0f;
+/// STEAM_INPUT_MAX_ANALOG_ACTION_DATA (isteaminput.h).
+enum float STEAM_INPUT_MAX_ANALOG_ACTION_DATA = 1.0f;
+/// STEAM_CONTROLLER_MAX_COUNT (isteamcontroller.h).
+enum int STEAM_CONTROLLER_MAX_COUNT = 16;
+/// STEAM_CONTROLLER_MAX_ANALOG_ACTIONS (isteamcontroller.h).
+enum int STEAM_CONTROLLER_MAX_ANALOG_ACTIONS = 24;
+/// STEAM_CONTROLLER_MAX_DIGITAL_ACTIONS (isteamcontroller.h).
+enum int STEAM_CONTROLLER_MAX_DIGITAL_ACTIONS = 256;
+/// STEAM_CONTROLLER_MAX_ORIGINS (isteamcontroller.h).
+enum int STEAM_CONTROLLER_MAX_ORIGINS = 8;
+/// STEAM_CONTROLLER_MAX_ACTIVE_LAYERS (isteamcontroller.h).
+enum int STEAM_CONTROLLER_MAX_ACTIVE_LAYERS = 16;
+/// STEAM_CONTROLLER_HANDLE_ALL_CONTROLLERS (isteamcontroller.h).
+enum uint64 STEAM_CONTROLLER_HANDLE_ALL_CONTROLLERS = 0xFFFFFFFFFFFFFFFF;
+/// STEAM_CONTROLLER_MIN_ANALOG_ACTION_DATA (isteamcontroller.h).
+enum float STEAM_CONTROLLER_MIN_ANALOG_ACTION_DATA = -1.0f;
+/// STEAM_CONTROLLER_MAX_ANALOG_ACTION_DATA (isteamcontroller.h).
+enum float STEAM_CONTROLLER_MAX_ANALOG_ACTION_DATA = 1.0f;

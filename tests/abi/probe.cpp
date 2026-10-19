@@ -5143,6 +5143,28 @@ extern "C" const long long steamworks_layout[] = {
     (long long)((long long)(k_iSteamRemotePlayCallbacks)), // k_iSteamRemotePlayCallbacks
     (long long)((long long)(k_iSteamChatCallbacks)), // k_iSteamChatCallbacks
     (long long)((long long)(k_iSteamTimelineCallbacks)), // k_iSteamTimelineCallbacks
+    (long long)((long long)(k_cchPersonaNameMax)), // k_cchPersonaNameMax
+    (long long)((long long)(k_cwchPersonaNameMax)), // k_cwchPersonaNameMax
+    (long long)((long long)(k_nMaxLobbyKeyLength)), // k_nMaxLobbyKeyLength
+    (long long)((long long)(INVALID_HTTPREQUEST_HANDLE)), // INVALID_HTTPREQUEST_HANDLE
+    (long long)((long long)(INVALID_HTTPCOOKIE_HANDLE)), // INVALID_HTTPCOOKIE_HANDLE
+    (long long)((long long)(INVALID_SCREENSHOT_HANDLE)), // INVALID_SCREENSHOT_HANDLE
+    (long long)((long long)(STEAM_INPUT_MAX_COUNT)), // STEAM_INPUT_MAX_COUNT
+    (long long)((long long)(STEAM_INPUT_MAX_ANALOG_ACTIONS)), // STEAM_INPUT_MAX_ANALOG_ACTIONS
+    (long long)((long long)(STEAM_INPUT_MAX_DIGITAL_ACTIONS)), // STEAM_INPUT_MAX_DIGITAL_ACTIONS
+    (long long)((long long)(STEAM_INPUT_MAX_ORIGINS)), // STEAM_INPUT_MAX_ORIGINS
+    (long long)((long long)(STEAM_INPUT_MAX_ACTIVE_LAYERS)), // STEAM_INPUT_MAX_ACTIVE_LAYERS
+    (long long)((long long)(STEAM_INPUT_HANDLE_ALL_CONTROLLERS)), // STEAM_INPUT_HANDLE_ALL_CONTROLLERS
+    (long long)((long long)(STEAM_INPUT_MIN_ANALOG_ACTION_DATA * 1000)), // STEAM_INPUT_MIN_ANALOG_ACTION_DATA * 1000
+    (long long)((long long)(STEAM_INPUT_MAX_ANALOG_ACTION_DATA * 1000)), // STEAM_INPUT_MAX_ANALOG_ACTION_DATA * 1000
+    (long long)((long long)(STEAM_CONTROLLER_MAX_COUNT)), // STEAM_CONTROLLER_MAX_COUNT
+    (long long)((long long)(STEAM_CONTROLLER_MAX_ANALOG_ACTIONS)), // STEAM_CONTROLLER_MAX_ANALOG_ACTIONS
+    (long long)((long long)(STEAM_CONTROLLER_MAX_DIGITAL_ACTIONS)), // STEAM_CONTROLLER_MAX_DIGITAL_ACTIONS
+    (long long)((long long)(STEAM_CONTROLLER_MAX_ORIGINS)), // STEAM_CONTROLLER_MAX_ORIGINS
+    (long long)((long long)(STEAM_CONTROLLER_MAX_ACTIVE_LAYERS)), // STEAM_CONTROLLER_MAX_ACTIVE_LAYERS
+    (long long)((long long)(STEAM_CONTROLLER_HANDLE_ALL_CONTROLLERS)), // STEAM_CONTROLLER_HANDLE_ALL_CONTROLLERS
+    (long long)((long long)(STEAM_CONTROLLER_MIN_ANALOG_ACTION_DATA * 1000)), // STEAM_CONTROLLER_MIN_ANALOG_ACTION_DATA * 1000
+    (long long)((long long)(STEAM_CONTROLLER_MAX_ANALOG_ACTION_DATA * 1000)), // STEAM_CONTROLLER_MAX_ANALOG_ACTION_DATA * 1000
     (long long)((long long)(SCE_PAD_TRIGGER_EFFECT_CONTROL_POINT_NUM)), // SCE_PAD_TRIGGER_EFFECT_CONTROL_POINT_NUM
     (long long)((long long)(SCE_PAD_TRIGGER_EFFECT_PARAM_INDEX_FOR_L2)), // SCE_PAD_TRIGGER_EFFECT_PARAM_INDEX_FOR_L2
     (long long)((long long)(SCE_PAD_TRIGGER_EFFECT_PARAM_INDEX_FOR_R2)), // SCE_PAD_TRIGGER_EFFECT_PARAM_INDEX_FOR_R2

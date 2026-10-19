@@ -41,7 +41,7 @@ else version (linux)
 enum bool haveAbiExpectations = is(typeof(abiTarget));
 
 /// Number of probed quantities.
-enum size_t abiEntryCount = 4047;
+enum size_t abiEntryCount = 4069;
 
 /// What each entry measures.
 immutable string[abiEntryCount] abiKeys = [
@@ -4080,6 +4080,28 @@ immutable string[abiEntryCount] abiKeys = [
     "k_iSteamRemotePlayCallbacks",
     "k_iSteamChatCallbacks",
     "k_iSteamTimelineCallbacks",
+    "k_cchPersonaNameMax",
+    "k_cwchPersonaNameMax",
+    "k_nMaxLobbyKeyLength",
+    "INVALID_HTTPREQUEST_HANDLE",
+    "INVALID_HTTPCOOKIE_HANDLE",
+    "INVALID_SCREENSHOT_HANDLE",
+    "STEAM_INPUT_MAX_COUNT",
+    "STEAM_INPUT_MAX_ANALOG_ACTIONS",
+    "STEAM_INPUT_MAX_DIGITAL_ACTIONS",
+    "STEAM_INPUT_MAX_ORIGINS",
+    "STEAM_INPUT_MAX_ACTIVE_LAYERS",
+    "STEAM_INPUT_HANDLE_ALL_CONTROLLERS",
+    "STEAM_INPUT_MIN_ANALOG_ACTION_DATA * 1000",
+    "STEAM_INPUT_MAX_ANALOG_ACTION_DATA * 1000",
+    "STEAM_CONTROLLER_MAX_COUNT",
+    "STEAM_CONTROLLER_MAX_ANALOG_ACTIONS",
+    "STEAM_CONTROLLER_MAX_DIGITAL_ACTIONS",
+    "STEAM_CONTROLLER_MAX_ORIGINS",
+    "STEAM_CONTROLLER_MAX_ACTIVE_LAYERS",
+    "STEAM_CONTROLLER_HANDLE_ALL_CONTROLLERS",
+    "STEAM_CONTROLLER_MIN_ANALOG_ACTION_DATA * 1000",
+    "STEAM_CONTROLLER_MAX_ANALOG_ACTION_DATA * 1000",
     "SCE_PAD_TRIGGER_EFFECT_CONTROL_POINT_NUM",
     "SCE_PAD_TRIGGER_EFFECT_PARAM_INDEX_FOR_L2",
     "SCE_PAD_TRIGGER_EFFECT_PARAM_INDEX_FOR_R2",
@@ -8131,6 +8153,28 @@ enum long[abiEntryCount] abiActual = [
     cast(long)(k_iSteamRemotePlayCallbacks),
     cast(long)(k_iSteamChatCallbacks),
     cast(long)(k_iSteamTimelineCallbacks),
+    cast(long)(k_cchPersonaNameMax),
+    cast(long)(k_cwchPersonaNameMax),
+    cast(long)(k_nMaxLobbyKeyLength),
+    cast(long)(INVALID_HTTPREQUEST_HANDLE),
+    cast(long)(INVALID_HTTPCOOKIE_HANDLE),
+    cast(long)(INVALID_SCREENSHOT_HANDLE),
+    cast(long)(STEAM_INPUT_MAX_COUNT),
+    cast(long)(STEAM_INPUT_MAX_ANALOG_ACTIONS),
+    cast(long)(STEAM_INPUT_MAX_DIGITAL_ACTIONS),
+    cast(long)(STEAM_INPUT_MAX_ORIGINS),
+    cast(long)(STEAM_INPUT_MAX_ACTIVE_LAYERS),
+    cast(long)(STEAM_INPUT_HANDLE_ALL_CONTROLLERS),
+    cast(long)(cast(long)(STEAM_INPUT_MIN_ANALOG_ACTION_DATA * 1000)),
+    cast(long)(cast(long)(STEAM_INPUT_MAX_ANALOG_ACTION_DATA * 1000)),
+    cast(long)(STEAM_CONTROLLER_MAX_COUNT),
+    cast(long)(STEAM_CONTROLLER_MAX_ANALOG_ACTIONS),
+    cast(long)(STEAM_CONTROLLER_MAX_DIGITAL_ACTIONS),
+    cast(long)(STEAM_CONTROLLER_MAX_ORIGINS),
+    cast(long)(STEAM_CONTROLLER_MAX_ACTIVE_LAYERS),
+    cast(long)(STEAM_CONTROLLER_HANDLE_ALL_CONTROLLERS),
+    cast(long)(cast(long)(STEAM_CONTROLLER_MIN_ANALOG_ACTION_DATA * 1000)),
+    cast(long)(cast(long)(STEAM_CONTROLLER_MAX_ANALOG_ACTION_DATA * 1000)),
     cast(long)(SCE_PAD_TRIGGER_EFFECT_CONTROL_POINT_NUM),
     cast(long)(SCE_PAD_TRIGGER_EFFECT_PARAM_INDEX_FOR_L2),
     cast(long)(SCE_PAD_TRIGGER_EFFECT_PARAM_INDEX_FOR_R2),
@@ -8401,7 +8445,9 @@ static if (haveAbiExpectations)
             2, 4, 2147483647, 6579574, 65535, 65535, 1200, 4096, 30, 64, 256, 128, 128, 64, 100, 200,
             300, 400, 500, 600, 700, 1000, 1100, 1200, 1220, 1250, 1280, 1300, 1500, 1700, 1800, 1900,
             2000, 2100, 2300, 2600, 2800, 3400, 3500, 4000, 4400, 4500, 4600, 4700, 5000, 5200, 5300, 5500,
-            5700, 5900, 6000, 10, 0, 1, 1, 2, 2, 48, 32, 32, 128, 33, 4,
+            5700, 5900, 6000, 128, 32, 255, 0, 0, 0, 16, 24, 256, 8, 16, -1, -1000,
+            1000, 16, 24, 256, 8, 16, -1, -1000, 1000, 10, 0, 1, 1, 2, 2, 48,
+            32, 32, 128, 33, 4,
         ];
     else static if (abiTarget == "x86_64-apple-macos")
         enum long[abiEntryCount] abiExpected = [
@@ -8657,7 +8703,9 @@ static if (haveAbiExpectations)
             2, 4, 2147483647, 6579574, 65535, 65535, 1200, 4096, 30, 64, 256, 128, 128, 64, 100, 200,
             300, 400, 500, 600, 700, 1000, 1100, 1200, 1220, 1250, 1280, 1300, 1500, 1700, 1800, 1900,
             2000, 2100, 2300, 2600, 2800, 3400, 3500, 4000, 4400, 4500, 4600, 4700, 5000, 5200, 5300, 5500,
-            5700, 5900, 6000, 10, 0, 1, 1, 2, 2, 48, 32, 32, 128, 33, 4,
+            5700, 5900, 6000, 128, 32, 255, 0, 0, 0, 16, 24, 256, 8, 16, -1, -1000,
+            1000, 16, 24, 256, 8, 16, -1, -1000, 1000, 10, 0, 1, 1, 2, 2, 48,
+            32, 32, 128, 33, 4,
         ];
     else static if (abiTarget == "x86_64-windows-msvc")
         enum long[abiEntryCount] abiExpected = [
@@ -8913,7 +8961,9 @@ static if (haveAbiExpectations)
             2, 4, 2147483647, 6579574, 65535, 65535, 1200, 4096, 30, 64, 256, 128, 128, 64, 100, 200,
             300, 400, 500, 600, 700, 1000, 1100, 1200, 1220, 1250, 1280, 1300, 1500, 1700, 1800, 1900,
             2000, 2100, 2300, 2600, 2800, 3400, 3500, 4000, 4400, 4500, 4600, 4700, 5000, 5200, 5300, 5500,
-            5700, 5900, 6000, 10, 0, 1, 1, 2, 2, 48, 32, 32, 128, 33, 8,
+            5700, 5900, 6000, 128, 32, 255, 0, 0, 0, 16, 24, 256, 8, 16, -1, -1000,
+            1000, 16, 24, 256, 8, 16, -1, -1000, 1000, 10, 0, 1, 1, 2, 2, 48,
+            32, 32, 128, 33, 8,
         ];
     else static if (abiTarget == "i686-windows-msvc")
         enum long[abiEntryCount] abiExpected = [
@@ -9169,7 +9219,9 @@ static if (haveAbiExpectations)
             2, 4, 2147483647, 6579574, 65535, 65535, 1200, 4096, 30, 64, 256, 128, 128, 64, 100, 200,
             300, 400, 500, 600, 700, 1000, 1100, 1200, 1220, 1250, 1280, 1300, 1500, 1700, 1800, 1900,
             2000, 2100, 2300, 2600, 2800, 3400, 3500, 4000, 4400, 4500, 4600, 4700, 5000, 5200, 5300, 5500,
-            5700, 5900, 6000, 10, 0, 1, 1, 2, 2, 48, 32, 32, 128, 33, 8,
+            5700, 5900, 6000, 128, 32, 255, 0, 0, 0, 16, 24, 256, 8, 16, -1, -1000,
+            1000, 16, 24, 256, 8, 16, -1, -1000, 1000, 10, 0, 1, 1, 2, 2, 48,
+            32, 32, 128, 33, 8,
         ];
     else static if (abiTarget == "x86_64-linux-gnu")
         enum long[abiEntryCount] abiExpected = [
@@ -9425,7 +9477,9 @@ static if (haveAbiExpectations)
             2, 4, 2147483647, 6579574, 65535, 65535, 1200, 4096, 30, 64, 256, 128, 128, 64, 100, 200,
             300, 400, 500, 600, 700, 1000, 1100, 1200, 1220, 1250, 1280, 1300, 1500, 1700, 1800, 1900,
             2000, 2100, 2300, 2600, 2800, 3400, 3500, 4000, 4400, 4500, 4600, 4700, 5000, 5200, 5300, 5500,
-            5700, 5900, 6000, 10, 0, 1, 1, 2, 2, 48, 32, 32, 128, 33, 4,
+            5700, 5900, 6000, 128, 32, 255, 0, 0, 0, 16, 24, 256, 8, 16, -1, -1000,
+            1000, 16, 24, 256, 8, 16, -1, -1000, 1000, 10, 0, 1, 1, 2, 2, 48,
+            32, 32, 128, 33, 4,
         ];
     else static if (abiTarget == "i686-linux-gnu")
         enum long[abiEntryCount] abiExpected = [
@@ -9681,7 +9735,9 @@ static if (haveAbiExpectations)
             2, 4, 2147483647, 6579574, 65535, 65535, 1200, 4096, 30, 64, 256, 128, 128, 64, 100, 200,
             300, 400, 500, 600, 700, 1000, 1100, 1200, 1220, 1250, 1280, 1300, 1500, 1700, 1800, 1900,
             2000, 2100, 2300, 2600, 2800, 3400, 3500, 4000, 4400, 4500, 4600, 4700, 5000, 5200, 5300, 5500,
-            5700, 5900, 6000, 10, 0, 1, 1, 2, 2, 48, 32, 32, 128, 33, 4,
+            5700, 5900, 6000, 128, 32, 255, 0, 0, 0, 16, 24, 256, 8, 16, -1, -1000,
+            1000, 16, 24, 256, 8, 16, -1, -1000, 1000, 10, 0, 1, 1, 2, 2, 48,
+            32, 32, 128, 33, 4,
         ];
     else static if (abiTarget == "aarch64-linux-gnu")
         enum long[abiEntryCount] abiExpected = [
@@ -9937,7 +9993,9 @@ static if (haveAbiExpectations)
             2, 4, 2147483647, 6579574, 65535, 65535, 1200, 4096, 30, 64, 256, 128, 128, 64, 100, 200,
             300, 400, 500, 600, 700, 1000, 1100, 1200, 1220, 1250, 1280, 1300, 1500, 1700, 1800, 1900,
             2000, 2100, 2300, 2600, 2800, 3400, 3500, 4000, 4400, 4500, 4600, 4700, 5000, 5200, 5300, 5500,
-            5700, 5900, 6000, 10, 0, 1, 1, 2, 2, 48, 32, 32, 128, 33, 4,
+            5700, 5900, 6000, 128, 32, 255, 0, 0, 0, 16, 24, 256, 8, 16, -1, -1000,
+            1000, 16, 24, 256, 8, 16, -1, -1000, 1000, 10, 0, 1, 1, 2, 2, 48,
+            32, 32, 128, 33, 4,
         ];
     else static if (abiTarget == "aarch64-linux-android")
         enum long[abiEntryCount] abiExpected = [
@@ -10193,7 +10251,9 @@ static if (haveAbiExpectations)
             2, 4, 2147483647, 6579574, 65535, 65535, 1200, 4096, 30, 64, 256, 128, 128, 64, 100, 200,
             300, 400, 500, 600, 700, 1000, 1100, 1200, 1220, 1250, 1280, 1300, 1500, 1700, 1800, 1900,
             2000, 2100, 2300, 2600, 2800, 3400, 3500, 4000, 4400, 4500, 4600, 4700, 5000, 5200, 5300, 5500,
-            5700, 5900, 6000, 10, 0, 1, 1, 2, 2, 48, 32, 32, 128, 33, 4,
+            5700, 5900, 6000, 128, 32, 255, 0, 0, 0, 16, 24, 256, 8, 16, -1, -1000,
+            1000, 16, 24, 256, 8, 16, -1, -1000, 1000, 10, 0, 1, 1, 2, 2, 48,
+            32, 32, 128, 33, 4,
         ];
 
     /// Lists every entry where D and C++ disagree.
