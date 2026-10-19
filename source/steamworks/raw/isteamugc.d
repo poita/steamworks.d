@@ -1392,18 +1392,26 @@ else
     }
 }
 
-/// Returns the ISteamUGC interface (user accessor); `null` before initialization.
+/// Returns the ISteamUGC interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamUGC_v021`, matching the inline function in steam_api_flat.h.
 ISteamUGC* SteamAPI_SteamUGC() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamUGC_v021 is null)
+            return null;
     return SteamAPI_SteamUGC_v021();
 }
 
-/// Returns the ISteamUGC interface (gameserver accessor); `null` before initialization.
+/// Returns the ISteamUGC interface (gameserver accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamGameServerUGC_v021`, matching the inline function in steam_api_flat.h.
 ISteamUGC* SteamAPI_SteamGameServerUGC() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamGameServerUGC_v021 is null)
+            return null;
     return SteamAPI_SteamGameServerUGC_v021();
 }

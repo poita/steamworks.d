@@ -366,18 +366,26 @@ else
     }
 }
 
-/// Returns the ISteamHTTP interface (user accessor); `null` before initialization.
+/// Returns the ISteamHTTP interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamHTTP_v003`, matching the inline function in steam_api_flat.h.
 ISteamHTTP* SteamAPI_SteamHTTP() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamHTTP_v003 is null)
+            return null;
     return SteamAPI_SteamHTTP_v003();
 }
 
-/// Returns the ISteamHTTP interface (gameserver accessor); `null` before initialization.
+/// Returns the ISteamHTTP interface (gameserver accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamGameServerHTTP_v003`, matching the inline function in steam_api_flat.h.
 ISteamHTTP* SteamAPI_SteamGameServerHTTP() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamGameServerHTTP_v003 is null)
+            return null;
     return SteamAPI_SteamGameServerHTTP_v003();
 }

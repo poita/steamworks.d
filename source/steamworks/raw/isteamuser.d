@@ -462,10 +462,14 @@ else
     }
 }
 
-/// Returns the ISteamUser interface (user accessor); `null` before initialization.
+/// Returns the ISteamUser interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamUser_v023`, matching the inline function in steam_api_flat.h.
 ISteamUser* SteamAPI_SteamUser() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamUser_v023 is null)
+            return null;
     return SteamAPI_SteamUser_v023();
 }

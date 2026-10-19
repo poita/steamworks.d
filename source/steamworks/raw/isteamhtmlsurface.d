@@ -512,10 +512,14 @@ else
     }
 }
 
-/// Returns the ISteamHTMLSurface interface (user accessor); `null` before initialization.
+/// Returns the ISteamHTMLSurface interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamHTMLSurface_v005`, matching the inline function in steam_api_flat.h.
 ISteamHTMLSurface* SteamAPI_SteamHTMLSurface() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamHTMLSurface_v005 is null)
+            return null;
     return SteamAPI_SteamHTMLSurface_v005();
 }

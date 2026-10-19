@@ -178,10 +178,14 @@ else
     }
 }
 
-/// Returns the ISteamGameServerStats interface (gameserver accessor); `null` before initialization.
+/// Returns the ISteamGameServerStats interface (gameserver accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamGameServerStats_v001`, matching the inline function in steam_api_flat.h.
 ISteamGameServerStats* SteamAPI_SteamGameServerStats() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamGameServerStats_v001 is null)
+            return null;
     return SteamAPI_SteamGameServerStats_v001();
 }

@@ -485,10 +485,14 @@ else
     }
 }
 
-/// Returns the ISteamController interface (user accessor); `null` before initialization.
+/// Returns the ISteamController interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamController_v008`, matching the inline function in steam_api_flat.h.
 ISteamController* SteamAPI_SteamController() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamController_v008 is null)
+            return null;
     return SteamAPI_SteamController_v008();
 }

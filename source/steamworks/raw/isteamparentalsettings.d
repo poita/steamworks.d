@@ -111,10 +111,14 @@ else
     }
 }
 
-/// Returns the ISteamParentalSettings interface (user accessor); `null` before initialization.
+/// Returns the ISteamParentalSettings interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamParentalSettings_v001`, matching the inline function in steam_api_flat.h.
 ISteamParentalSettings* SteamAPI_SteamParentalSettings() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamParentalSettings_v001 is null)
+            return null;
     return SteamAPI_SteamParentalSettings_v001();
 }

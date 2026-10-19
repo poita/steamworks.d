@@ -9,7 +9,8 @@
 /// ---
 /// const name = SteamAPI_ISteamFriends_GetPersonaName(SteamFriends());
 /// ---
-/// With the "dynamic" configuration the library must be loaded first.
+/// With the "dynamic" configuration they also return null while the library
+/// is not loaded or when it lacks the versioned accessor.
 /// `SteamClient()` and `SteamGameServerClient()` live in `steamworks.raw.helpers`.
 module steamworks.accessors;
 
@@ -226,4 +227,37 @@ unittest
     static assert(is(typeof(SteamGameServerUtils()) == ISteamUtils*));
     static assert(is(typeof(SteamNetworkingUtils()) == ISteamNetworkingUtils*));
     static assert(is(typeof(SteamGameServerNetworkingSockets()) == ISteamNetworkingSockets*));
+}
+
+/// Without the library (not loaded, or lacking an accessor) every accessor
+/// returns null instead of calling through a null function pointer.
+version (SteamworksDynamic) unittest
+{
+    import steamworks.loader : isSteamworksLoaded;
+
+    if (isSteamworksLoaded())
+        return;
+    size_t checked;
+    static foreach (name; __traits(allMembers, steamworks.accessors))
+    {
+        static if (is(typeof(__traits(getMember, steamworks.accessors, name)) == function))
+        {
+            assert(__traits(getMember, steamworks.accessors, name)() is null, name);
+            ++checked;
+        }
+    }
+    assert(checked >= 30);
+    assert(SteamAPI_SteamUser() is null);
+    assert(SteamClient() is null && SteamGameServerClient() is null);
+}
+
+/// An accessor the loaded library lacks reports null.
+version (SteamworksDynamic) unittest
+{
+    auto saved = SteamAPI_SteamUtils_v010;
+    scope (exit)
+        SteamAPI_SteamUtils_v010 = saved;
+    SteamAPI_SteamUtils_v010 = null;
+    assert(SteamUtils() is null);
+    assert(SteamAPI_SteamUtils() is null);
 }

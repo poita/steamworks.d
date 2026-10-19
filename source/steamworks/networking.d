@@ -17,9 +17,6 @@ import steamworks.strings : fromCString, tempCString;
 /// client's interface and falls back to the game server's, as the SDK does.
 private ISteamNetworkingUtils* utils() nothrow @nogc
 {
-    version (SteamworksDynamic)
-        if (SteamAPI_SteamNetworkingUtils_SteamAPI_v004 is null)
-            return null;
     return SteamAPI_SteamNetworkingUtils_SteamAPI();
 }
 

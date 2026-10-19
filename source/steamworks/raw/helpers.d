@@ -81,11 +81,15 @@ void SteamGameServer_ReleaseCurrentThreadMemory() nothrow @nogc
     SteamAPI_ReleaseCurrentThreadMemory();
 }
 
-/// Returns the global ISteamClient interface (`STEAMCLIENT_INTERFACE_VERSION`).
+/// Returns the global ISteamClient interface (`STEAMCLIENT_INTERFACE_VERSION`);
+/// with the `SteamworksDynamic` version, null while the library is not loaded.
 ///
 /// Mirrors the inline `SteamClient` accessor of isteamclient.h.
 ISteamClient* SteamClient() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamInternal_CreateInterface is null)
+            return null;
     return cast(ISteamClient*) SteamInternal_CreateInterface(STEAMCLIENT_INTERFACE_VERSION.ptr);
 }
 

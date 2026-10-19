@@ -620,11 +620,15 @@ string emitFunctionModule(const ref Model m, string sdk, string mod, const(Funct
         foreach (ref a; i.accessors)
         {
             c.line();
-            c.doc(format!("Returns the %s interface (%s accessor); `null` before initialization.\n\n"
+            c.doc(format!("Returns the %s interface (%s accessor); `null` before initialization\n"
+                    ~ "and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.\n\n"
                     ~ "Unversioned form of `%s`, matching the inline function in steam_api_flat.h.")(i.name,
                     a.kind, a.flatName));
             c.line(format!"%s* SteamAPI_%s() nothrow @nogc"(i.name, a.name));
             c.open();
+            c.line("version (SteamworksDynamic)");
+            c.line(format!"    if (%s is null)"(a.flatName));
+            c.line("        return null;");
             c.line(format!"return %s();"(a.flatName));
             c.close();
         }
@@ -845,4 +849,17 @@ unittest
         assert(text.startsWith(banner("test")), path);
     assert(o["source/steamworks/raw/types.d"].canFind("alias intp = ptrdiff_t;"));
     assert(o["source/steamworks/raw/consts.d"].canFind("enum uint32 k_uX = 0x1;"));
+}
+
+unittest
+{
+    import std.algorithm : canFind;
+
+    auto m = buildModel(fixtureApi, fixtureOverrides, fixtureHeaders);
+    auto o = generate(m, "test");
+    // The unversioned accessor returns null rather than calling a missing
+    // function pointer of the dynamic configuration.
+    assert(o["source/steamworks/raw/isteamx.d"].canFind("ISteamX* SteamAPI_SteamX() nothrow @nogc\n{\n"
+            ~ "    version (SteamworksDynamic)\n        if (SteamAPI_SteamX_v001 is null)\n"
+            ~ "            return null;\n    return SteamAPI_SteamX_v001();\n}"));
 }

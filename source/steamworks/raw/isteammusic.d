@@ -139,10 +139,14 @@ else
     }
 }
 
-/// Returns the ISteamMusic interface (user accessor); `null` before initialization.
+/// Returns the ISteamMusic interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamMusic_v001`, matching the inline function in steam_api_flat.h.
 ISteamMusic* SteamAPI_SteamMusic() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamMusic_v001 is null)
+            return null;
     return SteamAPI_SteamMusic_v001();
 }

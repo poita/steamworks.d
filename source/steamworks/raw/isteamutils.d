@@ -488,18 +488,26 @@ else
     }
 }
 
-/// Returns the ISteamUtils interface (user accessor); `null` before initialization.
+/// Returns the ISteamUtils interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamUtils_v010`, matching the inline function in steam_api_flat.h.
 ISteamUtils* SteamAPI_SteamUtils() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamUtils_v010 is null)
+            return null;
     return SteamAPI_SteamUtils_v010();
 }
 
-/// Returns the ISteamUtils interface (gameserver accessor); `null` before initialization.
+/// Returns the ISteamUtils interface (gameserver accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamGameServerUtils_v010`, matching the inline function in steam_api_flat.h.
 ISteamUtils* SteamAPI_SteamGameServerUtils() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamGameServerUtils_v010 is null)
+            return null;
     return SteamAPI_SteamGameServerUtils_v010();
 }

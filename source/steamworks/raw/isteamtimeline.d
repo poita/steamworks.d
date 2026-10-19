@@ -286,10 +286,14 @@ else
     }
 }
 
-/// Returns the ISteamTimeline interface (user accessor); `null` before initialization.
+/// Returns the ISteamTimeline interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamTimeline_v004`, matching the inline function in steam_api_flat.h.
 ISteamTimeline* SteamAPI_SteamTimeline() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamTimeline_v004 is null)
+            return null;
     return SteamAPI_SteamTimeline_v004();
 }

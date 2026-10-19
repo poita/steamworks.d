@@ -153,10 +153,14 @@ else
     }
 }
 
-/// Returns the ISteamScreenshots interface (user accessor); `null` before initialization.
+/// Returns the ISteamScreenshots interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamScreenshots_v003`, matching the inline function in steam_api_flat.h.
 ISteamScreenshots* SteamAPI_SteamScreenshots() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamScreenshots_v003 is null)
+            return null;
     return SteamAPI_SteamScreenshots_v003();
 }

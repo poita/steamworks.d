@@ -286,10 +286,14 @@ else
     }
 }
 
-/// Returns the ISteamRemotePlay interface (user accessor); `null` before initialization.
+/// Returns the ISteamRemotePlay interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamRemotePlay_v004`, matching the inline function in steam_api_flat.h.
 ISteamRemotePlay* SteamAPI_SteamRemotePlay() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamRemotePlay_v004 is null)
+            return null;
     return SteamAPI_SteamRemotePlay_v004();
 }

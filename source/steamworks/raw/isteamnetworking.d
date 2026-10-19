@@ -327,18 +327,26 @@ else
     }
 }
 
-/// Returns the ISteamNetworking interface (user accessor); `null` before initialization.
+/// Returns the ISteamNetworking interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamNetworking_v006`, matching the inline function in steam_api_flat.h.
 ISteamNetworking* SteamAPI_SteamNetworking() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamNetworking_v006 is null)
+            return null;
     return SteamAPI_SteamNetworking_v006();
 }
 
-/// Returns the ISteamNetworking interface (gameserver accessor); `null` before initialization.
+/// Returns the ISteamNetworking interface (gameserver accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamGameServerNetworking_v006`, matching the inline function in steam_api_flat.h.
 ISteamNetworking* SteamAPI_SteamGameServerNetworking() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamGameServerNetworking_v006 is null)
+            return null;
     return SteamAPI_SteamGameServerNetworking_v006();
 }

@@ -91,10 +91,14 @@ else
     }
 }
 
-/// Returns the ISteamVideo interface (user accessor); `null` before initialization.
+/// Returns the ISteamVideo interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamVideo_v007`, matching the inline function in steam_api_flat.h.
 ISteamVideo* SteamAPI_SteamVideo() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamVideo_v007 is null)
+            return null;
     return SteamAPI_SteamVideo_v007();
 }

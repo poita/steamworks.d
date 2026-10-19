@@ -1102,26 +1102,38 @@ else
     }
 }
 
-/// Returns the ISteamMatchmaking interface (user accessor); `null` before initialization.
+/// Returns the ISteamMatchmaking interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamMatchmaking_v009`, matching the inline function in steam_api_flat.h.
 ISteamMatchmaking* SteamAPI_SteamMatchmaking() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamMatchmaking_v009 is null)
+            return null;
     return SteamAPI_SteamMatchmaking_v009();
 }
 
-/// Returns the ISteamMatchmakingServers interface (user accessor); `null` before initialization.
+/// Returns the ISteamMatchmakingServers interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamMatchmakingServers_v002`, matching the inline function in steam_api_flat.h.
 ISteamMatchmakingServers* SteamAPI_SteamMatchmakingServers() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamMatchmakingServers_v002 is null)
+            return null;
     return SteamAPI_SteamMatchmakingServers_v002();
 }
 
-/// Returns the ISteamParties interface (user accessor); `null` before initialization.
+/// Returns the ISteamParties interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamParties_v002`, matching the inline function in steam_api_flat.h.
 ISteamParties* SteamAPI_SteamParties() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamParties_v002 is null)
+            return null;
     return SteamAPI_SteamParties_v002();
 }

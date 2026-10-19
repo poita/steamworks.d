@@ -73,7 +73,8 @@ if (loadSteamworks() != SteamworksLoadStatus.success)  // next to the executable
 functions it has are bound and the rest stay `null`; see `steamworksMissingSymbolCount`).
 `unloadSteamworks()` releases the library after `SteamAPI_Shutdown()`. Calling a flat function
 before `loadSteamworks()` succeeds dereferences a null pointer; the D layer's `steamInit` and
-friends check for this and report an error instead. Loading is not thread-safe: load once at
+friends check for this and report an error instead, and the accessors (`SteamUser()`,
+`SteamAPI_SteamUser()`, `SteamClient()`, ...) return null. Loading is not thread-safe: load once at
 start-up, before other threads use Steam.
 
 ### `linked`
@@ -197,7 +198,8 @@ requires after `SteamAPI_Init`); pass `SteamDispatchMode.automatic` to keep Stea
 The accessors carry their C++ names: `SteamUser()`, `SteamFriends()`, `SteamMatchmaking()`,
 `SteamNetworkingSockets()`, ..., and `SteamGameServer()`, `SteamGameServerNetworkingSockets()`,
 ... for game servers. Each returns the raw interface pointer to pass as `self`, or null before
-initialization.
+initialization (and, with the "dynamic" configuration, when the library is not loaded or lacks
+that accessor).
 
 ### Callbacks and call results
 

@@ -566,18 +566,26 @@ else
     }
 }
 
-/// Returns the ISteamInventory interface (user accessor); `null` before initialization.
+/// Returns the ISteamInventory interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamInventory_v003`, matching the inline function in steam_api_flat.h.
 ISteamInventory* SteamAPI_SteamInventory() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamInventory_v003 is null)
+            return null;
     return SteamAPI_SteamInventory_v003();
 }
 
-/// Returns the ISteamInventory interface (gameserver accessor); `null` before initialization.
+/// Returns the ISteamInventory interface (gameserver accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamGameServerInventory_v003`, matching the inline function in steam_api_flat.h.
 ISteamInventory* SteamAPI_SteamGameServerInventory() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamGameServerInventory_v003 is null)
+            return null;
     return SteamAPI_SteamGameServerInventory_v003();
 }

@@ -539,10 +539,14 @@ else
     }
 }
 
-/// Returns the ISteamGameServer interface (gameserver accessor); `null` before initialization.
+/// Returns the ISteamGameServer interface (gameserver accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamGameServer_v015`, matching the inline function in steam_api_flat.h.
 ISteamGameServer* SteamAPI_SteamGameServer() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamGameServer_v015 is null)
+            return null;
     return SteamAPI_SteamGameServer_v015();
 }

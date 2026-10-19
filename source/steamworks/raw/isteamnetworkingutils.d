@@ -581,10 +581,14 @@ else
     }
 }
 
-/// Returns the ISteamNetworkingUtils interface (global accessor); `null` before initialization.
+/// Returns the ISteamNetworkingUtils interface (global accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamNetworkingUtils_SteamAPI_v004`, matching the inline function in steam_api_flat.h.
 ISteamNetworkingUtils* SteamAPI_SteamNetworkingUtils_SteamAPI() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamNetworkingUtils_SteamAPI_v004 is null)
+            return null;
     return SteamAPI_SteamNetworkingUtils_SteamAPI_v004();
 }

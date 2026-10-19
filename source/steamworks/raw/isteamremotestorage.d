@@ -890,10 +890,14 @@ else
     }
 }
 
-/// Returns the ISteamRemoteStorage interface (user accessor); `null` before initialization.
+/// Returns the ISteamRemoteStorage interface (user accessor); `null` before initialization
+/// and, with the `SteamworksDynamic` version, when the library is not loaded or lacks it.
 ///
 /// Unversioned form of `SteamAPI_SteamRemoteStorage_v016`, matching the inline function in steam_api_flat.h.
 ISteamRemoteStorage* SteamAPI_SteamRemoteStorage() nothrow @nogc
 {
+    version (SteamworksDynamic)
+        if (SteamAPI_SteamRemoteStorage_v016 is null)
+            return null;
     return SteamAPI_SteamRemoteStorage_v016();
 }
