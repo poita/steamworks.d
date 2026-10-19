@@ -30,8 +30,6 @@ int main(string[] args)
         return 1;
     }
 
-    // Manual dispatch must be selected before initialization.
-    SteamAPI_ManualDispatch_Init();
     SteamErrMsg err = 0;
     if (SteamAPI_InitEx(&err) != ESteamAPIInitResult.k_ESteamAPIInitResult_OK)
     {
@@ -40,6 +38,8 @@ int main(string[] args)
     }
     scope (exit)
         SteamAPI_Shutdown();
+    // Manual dispatch is selected after initialization (see steam_api.h).
+    SteamAPI_ManualDispatch_Init();
 
     auto user = SteamAPI_SteamUser();
     auto friends = SteamAPI_SteamFriends();
