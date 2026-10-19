@@ -963,7 +963,12 @@ Comparison compare(const ref DInventory d, const ref CppInventory c, ref VerifyC
         }
         ++r.matched;
         if (a.kind == "class")
+        {
             check(format!"sizeof(%s) == %s"(name, a.size), "sizeof " ~ name);
+            // Only extern(C++) classes share the C++ vtable and object layout.
+            if (a.alignment != "C++")
+                r.problems ~= format!"%s: extern(%s) class; the C++ layout needs extern(C++)"(name, a.alignment);
+        }
         else if (a.kind != "opaque")
         {
             check(format!"sizeof(%s) == %s"(name, a.size), "sizeof " ~ name);
@@ -1339,6 +1344,148 @@ string nativeTarget() @safe pure nothrow
         return "";
 }
 
+/// The Steam API library Valve ships for a target, and how its symbol names
+/// are decorated.
+struct TargetLibrary
+{
+    string path; /// under sdk/redistributable_bin
+    string[] nmArgs; /// nm options listing the exported (or, for an import library, defined) symbols
+    bool underscore; /// C names carry a leading underscore (Mach-O, 32-bit Windows)
+}
+
+/// The library for a clang triple.
+TargetLibrary targetLibrary(string clangTriple) @safe pure
+{
+    if (clangTriple.startsWith("arm64-apple"))
+        return TargetLibrary("osx/libsteam_api.dylib", ["-gU", "-arch", "arm64"], true);
+    if (clangTriple.startsWith("x86_64-apple"))
+        return TargetLibrary("osx/libsteam_api.dylib", ["-gU", "-arch", "x86_64"], true);
+    if (clangTriple == "x86_64-pc-windows-msvc")
+        return TargetLibrary("win64/steam_api64.lib", ["--defined-only"], false);
+    if (clangTriple == "i686-pc-windows-msvc")
+        return TargetLibrary("steam_api.lib", ["--defined-only"], true);
+    if (clangTriple == "x86_64-linux-gnu")
+        return TargetLibrary("linux64/libsteam_api.so", ["-D", "--defined-only"], false);
+    if (clangTriple == "i686-linux-gnu")
+        return TargetLibrary("linux32/libsteam_api.so", ["-D", "--defined-only"], false);
+    if (clangTriple == "aarch64-linux-gnu")
+        return TargetLibrary("linuxarm64/libsteam_api.so", ["-D", "--defined-only"], false);
+    if (clangTriple == "aarch64-linux-android")
+        return TargetLibrary("androidarm64/libsteam_api.so", ["-D", "--defined-only"], false);
+    throw new Exception("no library for " ~ clangTriple);
+}
+
+/// Symbol names from `nm` output (the last field of each line), with the
+/// platform's C underscore removed; import-library thunks (`__imp_`) are skipped.
+string[] nmSymbols(string output, bool underscore) @safe pure
+{
+    string[] r;
+    foreach (line; output.lineSplitter)
+    {
+        const f = line.split;
+        if (f.length == 0 || f[$ - 1].endsWith(":"))
+            continue;
+        string n = f[$ - 1];
+        if (n.startsWith("__imp_"))
+            continue;
+        if (underscore)
+        {
+            if (!n.startsWith("_"))
+                continue;
+            n = n[1 .. $];
+        }
+        r ~= n;
+    }
+    return r;
+}
+
+unittest
+{
+    assert(nmSymbols("         U _SteamAPI_Init\n00000000 T __imp__SteamAPI_Init\n", true) == [
+        "SteamAPI_Init"
+    ]);
+    assert(nmSymbols("0000 T SteamAPI_Init\nlib.so:\n", false) == ["SteamAPI_Init"]);
+}
+
+/// Whether an exported name belongs to the C runtime statically linked into
+/// some of the libraries rather than to the Steam API.
+bool isRuntimeExport(string n) @safe pure
+{
+    return n.startsWith("_Z") || n.startsWith("__") || n.startsWith("_init")
+        || n.startsWith("_fini") || n == "SteamRealPath" || n.startsWith("_D") || n.startsWith("_d_")
+        || n == "_end" || n == "_edata" || n == "_bss_start";
+}
+
+/// The names an import library (`.lib`) makes available: those with an
+/// `__imp_` pointer, which covers functions and data.
+string[] importLibraryExports(string nmOutput, bool underscore) @safe pure
+{
+    string[] r;
+    foreach (line; nmOutput.lineSplitter)
+    {
+        const f = line.split;
+        if (f.length == 0 || !f[$ - 1].startsWith("__imp_"))
+            continue;
+        auto m = f[$ - 1]["__imp_".length .. $];
+        if (underscore)
+        {
+            if (!m.startsWith("_"))
+                continue;
+            m = m[1 .. $];
+        }
+        r ~= m;
+    }
+    return r;
+}
+
+unittest
+{
+    assert(importLibraryExports("0 T __imp__SteamAPI_Init\n0 T _SteamAPI_Init\n0 R .idata$2\n",
+            true) == ["SteamAPI_Init"]);
+    assert(importLibraryExports("0 T __imp_SteamAPI_Init\n0 D __imp_g_p\n", false) == [
+        "SteamAPI_Init", "g_p"
+    ]);
+}
+
+/// Compares, for one target, the extern(C) functions the bindings declare
+/// with the undefined symbols of the linked configuration's object (proving
+/// the symbol names the compiler emits) and with the exports of Valve's
+/// library. Returns the problems found.
+string[] compareLinkSymbols(const string[] cFunctions, const string[] undefinedSyms,
+        const string[] exportedSyms, const string[] unbound)
+{
+    string[] r;
+    bool[string] exported, undefined, declared;
+    foreach (n; exportedSyms)
+        exported[n] = true;
+    foreach (n; undefinedSyms)
+        undefined[n] = true;
+    foreach (n; cFunctions)
+        declared[n] = true;
+    foreach (n; declared.keys.sort)
+    {
+        if (n !in undefined)
+            r ~= "the linked object does not reference " ~ n;
+        if (n !in exported)
+            r ~= "the library does not export " ~ n;
+    }
+    foreach (n; exported.keys.sort)
+        if (n !in declared && !unbound.canFind(n) && !isRuntimeExport(n))
+            r ~= "exported but not bound: " ~ n;
+    foreach (n; unbound)
+        if (n !in exported)
+            r ~= "listed in unboundExports but not exported: " ~ n;
+    return r;
+}
+
+unittest
+{
+    assert(compareLinkSymbols(["SteamAPI_Init"], ["SteamAPI_Init", "memcpy"], [
+        "SteamAPI_Init", "GetHSteamPipe", "_ZN1x"
+    ], ["GetHSteamPipe"]).length == 0);
+    assert(compareLinkSymbols(["SteamAPI_Nope"], [], ["SteamAPI_Init"], []).length == 3);
+}
+
 /// Options of a verification run.
 struct VerifyOptions
 {
@@ -1347,6 +1494,8 @@ struct VerifyOptions
     string clang = "clang++";
     string ldc = "ldc2";
     string dmd = "dmd"; /// empty to skip dmd
+    string nm = "nm"; /// an nm that reads Mach-O, ELF and COFF (llvm-nm)
+    string libraries = "sdk/redistributable_bin";
     string workDir; /// kept when set; a temporary directory otherwise
 }
 
@@ -1374,6 +1523,32 @@ int runVerify(const ref JSONValue overrides, VerifyOptions opt)
     const src = buildPath(opt.root, "source");
     const dump = buildPath(opt.root, "tests", "abi", "reflect", "dump.d");
     int failures;
+
+    string[] unbound;
+    foreach (ref u; overrides["unboundExports"]["names"].array)
+        unbound ~= u.str;
+    const linkrefs = buildPath(opt.root, "tests", "abi", "reflect", "linkrefs.d");
+
+    // Compiles linkrefs.d for the target and compares its undefined symbols
+    // with the target library's exports.
+    string[] linkCheck(const string[] run, string clangTriple, const string[] cFunctions)
+    {
+        const obj = buildPath(work, format!"linkrefs-%s-%s.o"(run[0], clangTriple));
+        auto cmd = run[2 .. $].filter!(a => a.length).array ~ [
+            "-c", "-of=" ~ obj, "-I" ~ src, "-J" ~ buildPath(src, "steamworks", "raw"), linkrefs
+        ];
+        auto cr = execute(cmd);
+        if (cr.status != 0)
+            return ["compiling linkrefs.d failed: " ~ cr.output];
+        const lib = targetLibrary(clangTriple);
+        auto ur = execute([opt.nm, "-u", obj]);
+        auto er = execute([opt.nm] ~ lib.nmArgs ~ [buildPath(opt.libraries, lib.path)]);
+        if (ur.status != 0 || er.status != 0)
+            return ["nm failed: " ~ ur.output ~ er.output];
+        const exported = lib.path.endsWith(".lib") ? importLibraryExports(er.output,
+                lib.underscore) : nmSymbols(er.output, lib.underscore);
+        return compareLinkSymbols(cFunctions, nmSymbols(ur.output, lib.underscore), exported, unbound);
+    }
 
     foreach (t; targets)
     {
@@ -1425,6 +1600,14 @@ int runVerify(const ref JSONValue overrides, VerifyOptions opt)
             }
             auto d = readDump(dr.output, cfg.names);
             auto cmp = compare(d, inv, cfg, msvc);
+            if (run[1] == "linked")
+            {
+                const cFunctions = d.functions
+                    .filter!(f => f.linkage == "C" && f.kind == "func")
+                    .map!(f => f.name)
+                    .array;
+                cmp.problems ~= linkCheck(run, t.clang, cFunctions);
+            }
             const checkFile = buildPath(work, format!"check-%s-%s-%s.cpp"(run[0], t.clang, run[1]));
             write(checkFile, cmp.cpp);
             auto cr = execute([opt.clang] ~ flags ~ [

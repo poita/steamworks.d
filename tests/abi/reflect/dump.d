@@ -10,7 +10,8 @@
 /// Line format (tab-separated; names are D-qualified without the module,
 /// types are C++ expressions over the sw_* aliases of the verifier's prelude):
 ///   M module                                  a module being described
-///   S name kind size align                    struct, union, class or opaque struct
+///   S name kind size align                    struct, union, class or opaque struct;
+///                                             a class gives its linkage for align
 ///   F owner field offset size type visibility data member
 ///   P owner name                              any other member of an aggregate
 ///   R owner name vindex type                  virtual method of an extern(C++) class
@@ -113,7 +114,10 @@ template cppType(T)
     else static if (is(T == V*, V))
     {
         static if (is(V == function))
-            enum cppType = fnType!V;
+        {
+            // A C function pointer with D linkage would use the D calling convention.
+            enum cppType = (__traits(getLinkage, V) == "D" ? "?D-linkage " : "") ~ fnType!V;
+        }
         else
             enum cppType = "sw_p<" ~ cppType!V ~ ">";
     }
@@ -189,8 +193,8 @@ template returnType(F)
     }
 }
 
-/// A function type as `sw_fn<R, P...>`; D linkage or C-style varargs are
-/// marked so the verifier rejects them.
+/// A function type as `sw_fn<R, P...>`; C-style varargs are marked so the
+/// verifier rejects them.
 template fnType(F)
 {
     enum string variadic = __traits(getFunctionVariadicStyle, F);
@@ -246,7 +250,8 @@ template describeAggregate(T)
     enum string name = qualName!T;
     static if (is(T == class))
     {
-        enum string head = "S\t" ~ name ~ "\tclass\t" ~ utoa(__traits(classInstanceSize, T)) ~ "\t-";
+        enum string head = "S\t" ~ name ~ "\tclass\t" ~ utoa(__traits(classInstanceSize,
+                    T)) ~ "\t" ~ __traits(getLinkage, T);
     }
     else static if (__traits(compiles, T.sizeof))
         enum string head = "S\t" ~ name ~ "\t" ~ (is(T == union)

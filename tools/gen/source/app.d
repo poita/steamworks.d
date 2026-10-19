@@ -64,6 +64,7 @@ int main(string[] args)
         vo.ldc = ldc;
         vo.dmd = dmd;
         vo.workDir = verifyDir;
+        vo.libraries = buildPath(sdk, "redistributable_bin");
         const failures = runVerify(ovr, vo);
         if (failures)
             stderr.writefln("%s verification failure(s)", failures);
