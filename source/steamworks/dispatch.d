@@ -92,9 +92,10 @@ interface CallbackSource
     void freeLastCallback(HSteamPipe pipe) @safe nothrow @nogc;
 
     /// `SteamAPI_ManualDispatch_GetAPICallResult`: copies the result of a
-    /// completed call into `buffer`. Returns false when no result is
-    /// available; `failed` reports an I/O failure.
-    bool apiCallResult(HSteamPipe pipe, SteamAPICall_t call, void[] buffer, int expectedCallback, out bool failed) @safe nothrow @nogc;
+    /// completed call, which Steam reports as callback id `expected`, into
+    /// `buffer`. Returns false when no result is available; `failed` reports
+    /// an I/O failure.
+    bool apiCallResult(HSteamPipe pipe, SteamAPICall_t call, void[] buffer, int expected, out bool failed) @safe nothrow @nogc;
 }
 
 /// `CallbackSource` backed by Steam's manual dispatch functions.
@@ -239,6 +240,8 @@ private enum int anyCallback = int.min;
 /// (and `nothrow @nogc` for `NogcCallbackDispatcher`).
 struct BasicCallbackDispatcher(bool nogcHandlers)
 {
+    private alias Msg = CallbackMsg_t;
+
     static if (nogcHandlers)
     {
         /// Handler for callback struct `T`.
@@ -256,7 +259,7 @@ struct BasicCallbackDispatcher(bool nogcHandlers)
         alias SafeCallResultHandler(T) = void delegate(ref const T, bool ioFailure) @safe nothrow @nogc;
         /// ditto
         alias SafeRawHandler = void delegate(ref const CallbackMsg_t) @safe nothrow @nogc;
-        private alias Thunk = void function(ref const Entry, ref const CallbackMsg_t, const(void)*, size_t, bool) @safe nothrow @nogc;
+        private alias Thunk = void function(ref const Entry, ref const Msg, const(void)*, size_t, bool) @safe nothrow @nogc;
     }
     else
     {
@@ -275,7 +278,7 @@ struct BasicCallbackDispatcher(bool nogcHandlers)
         alias SafeCallResultHandler(T) = void delegate(ref const T, bool ioFailure) @safe;
         /// ditto
         alias SafeRawHandler = void delegate(ref const CallbackMsg_t) @safe;
-        private alias Thunk = void function(ref const Entry, ref const CallbackMsg_t, const(void)*, size_t, bool) @safe;
+        private alias Thunk = void function(ref const Entry, ref const Msg, const(void)*, size_t, bool) @safe;
     }
 
     /// The Steam pipe to pump; 0 (the default) makes `runFrame` do nothing.
@@ -1070,19 +1073,19 @@ version (unittest)
             ++frees;
         }
 
-        override bool apiCallResult(HSteamPipe, SteamAPICall_t call, void[] buffer, int expected, out bool failed) @trusted nothrow @nogc
+        override bool apiCallResult(HSteamPipe, SteamAPICall_t call, void[] buf, int expected, out bool io) @trusted nothrow @nogc
         {
             ++fetches;
             lastExpected = expected;
-            lastFetchSize = buffer.length;
+            lastFetchSize = buf.length;
             foreach (ref r; results)
             {
                 if (r.call != call || r.bytes is null)
                     continue;
-                if (r.callbackId != expected || r.bytes.length != buffer.length)
+                if (r.callbackId != expected || r.bytes.length != buf.length)
                     return false;
-                buffer[] = r.bytes[];
-                failed = r.ioFailure;
+                buf[] = r.bytes[];
+                io = r.ioFailure;
                 r.bytes = null; // a result can be fetched once
                 return true;
             }
@@ -1713,13 +1716,14 @@ unittest
 /// The whole dispatcher is usable from @safe code with @safe handlers.
 unittest
 {
-    static void frame(ref CallbackDispatcher d, ref NogcCallbackDispatcher n, ref int calls) @safe
+    static int frame(ref CallbackDispatcher d, ref NogcCallbackDispatcher n) @safe
     {
+        int calls;
         auto t = d.register!PersonaStateChange_t((ref e) { ++calls; });
         d.register((ref const GameOverlayActivated_t e) { ++calls; });
         d.registerRaw((ref const CallbackMsg_t m) { ++calls; });
         auto r = d.callResult!LeaderboardFindResult_t(80, (ref r, io) { ++calls; });
-        d.callResult(81, (ref const NumberOfCurrentPlayers_t r, bool io) { ++calls; });
+        d.callResult(81, (ref const NumberOfCurrentPlayers_t r, bool) { ++calls; });
         d.runFrame();
         d.cancel(r);
         d.unregister(t);
@@ -1727,6 +1731,7 @@ unittest
         n.runFrame();
         d.clear();
         cast(void) manualDispatchSource();
+        return calls;
     }
 
     static assert(__traits(compiles, () @safe {
@@ -1737,10 +1742,8 @@ unittest
     auto src = new FakeSource;
     auto d = CallbackDispatcher(1, src);
     auto n = NogcCallbackDispatcher(1, new FakeSource);
-    int calls;
     src.push(persona(1));
-    frame(d, n, calls);
-    assert(calls == 2);
+    assert(frame(d, n) == 2);
 }
 
 /// Registering a @system handler is itself @system.
@@ -1750,18 +1753,20 @@ unittest
     {
     }
 
-    CallbackDispatcher d;
-    static assert(!__traits(compiles, () @safe { d.register(&unsafe); }));
+    static assert(!__traits(compiles, () @safe { CallbackDispatcher d; d.register(&unsafe); }));
     static assert(!__traits(compiles, () @safe {
+            CallbackDispatcher d;
             d.register!PersonaStateChange_t((ref e) { int* p; p++; });
         }));
     static assert(!__traits(compiles, () @safe {
+            CallbackDispatcher d;
             d.registerRaw((ref const CallbackMsg_t m) { int* p; p++; });
         }));
     static assert(!__traits(compiles, () @safe {
+            CallbackDispatcher d;
             d.callResult!LeaderboardFindResult_t(1, (ref r, io) { int* p; p++; });
         }));
-    static assert(__traits(compiles, () @system { d.register(&unsafe); }));
+    static assert(__traits(compiles, () @system { CallbackDispatcher d; d.register(&unsafe); }));
 }
 
 /// call!fn derives the result type from the function's attribute.

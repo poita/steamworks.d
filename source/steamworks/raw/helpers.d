@@ -146,8 +146,15 @@ void GetSteamNetworkingLocationPOPStringFromID(size_t N)(SteamNetworkingPOPID id
 
 unittest
 {
-    char[4] small;
-    static assert(!__traits(compiles, GetSteamNetworkingLocationPOPStringFromID(1, small)));
+    // A buffer without room for 4 characters and the NUL is rejected.
+    static assert(!__traits(compiles, {
+            char[4] small;
+            GetSteamNetworkingLocationPOPStringFromID(1, small);
+        }));
+    static assert(__traits(compiles, {
+            char[5] code;
+            GetSteamNetworkingLocationPOPStringFromID(1, code);
+        }));
 }
 
 unittest
