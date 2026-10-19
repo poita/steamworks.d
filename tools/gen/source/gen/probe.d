@@ -202,21 +202,33 @@ CPP";
     return o;
 }
 
-/// Runs clang for every target and emits the D expectations module.
-string runProbe(const ref Model m, string sdk, string clang, string includeDir, string abiDir)
-{
-    import std.process : execute;
+/// Minimal libc headers the SDK headers include; the probe compiles
+/// freestanding so that every target works without its sysroot.
+immutable string[string] stubHeaders = [
+    "string.h": "#pragma once\n#include <stddef.h>\n"
+    ~ "void *memset(void *, int, size_t);\nvoid *memcpy(void *, const void *, size_t);\n"
+    ~ "int memcmp(const void *, const void *, size_t);\nsize_t strlen(const char *);\n"
+    ~ "char *strncpy(char *, const char *, size_t);\n",
+    "stdio.h": "#pragma once\n#include <stddef.h>\nint snprintf(char *, size_t, const char *, ...);\n",
+];
 
-    auto es = probeEntries(m);
-    const stub = buildPath(abiDir, "stub");
+/// Runs clang for every target and emits the D expectations module. Works in
+/// a temporary directory, so nothing in the repository changes until the
+/// caller writes the results.
+string runProbe(const ref Model m, string sdk, string clang, string includeDir)
+{
+    import std.file : rmdirRecurse, tempDir;
+    import std.process : execute, thisProcessID;
+
+    const es = probeEntries(m);
+    const work = buildPath(tempDir, format!"steamworks-gen-%s"(thisProcessID));
+    const stub = buildPath(work, "stub");
     mkdirRecurse(stub);
-    write(buildPath(stub, "string.h"), "#pragma once\n#include <stddef.h>\n"
-            ~ "void *memset(void *, int, size_t);\nvoid *memcpy(void *, const void *, size_t);\n"
-            ~ "int memcmp(const void *, const void *, size_t);\nsize_t strlen(const char *);\n"
-            ~ "char *strncpy(char *, const char *, size_t);\n");
-    write(buildPath(stub, "stdio.h"),
-            "#pragma once\n#include <stddef.h>\n" ~ "int snprintf(char *, size_t, const char *, ...);\n");
-    const probe = buildPath(abiDir, "probe.cpp");
+    scope (exit)
+        rmdirRecurse(work);
+    foreach (name, text; stubHeaders)
+        write(buildPath(stub, name), text);
+    const probe = buildPath(work, "probe.cpp");
     write(probe, emitProbeCpp(m, sdk));
 
     long[][] results;

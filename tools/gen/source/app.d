@@ -51,9 +51,10 @@ int main(string[] args)
 
     Output files = generate(model, sdkVersion);
     files["tests/abi/probe.cpp"] = emitProbeCpp(model, sdkVersion);
+    foreach (name, text; stubHeaders)
+        files["tests/abi/stub/" ~ name] = text;
     if (abi)
-        files["tests/abi/source/abi_expected.d"] = runProbe(model, sdkVersion, clang,
-                buildPath(sdk, "public"), buildPath(outDir, "tests", "abi"));
+        files["tests/abi/source/abi_expected.d"] = runProbe(model, sdkVersion, clang, buildPath(sdk, "public"));
 
     if (dfmt.length)
         foreach (path, ref text; files)
