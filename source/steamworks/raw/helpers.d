@@ -1,8 +1,8 @@
-/// The inline functions of steam_api.h, steam_gameserver.h and isteamclient.h,
-/// which the library does not export.
+/// The inline functions of steam_api.h, steam_gameserver.h, isteamclient.h
+/// and steamhttpenums.h, which the library does not export.
 module steamworks.raw.helpers;
 
-import steamworks.raw.enums : ESteamAPIInitResult, EServerMode;
+import steamworks.raw.enums : EHTTPStatusCode, ESteamAPIInitResult, EServerMode;
 import steamworks.raw.interfaces;
 import steamworks.raw.steam_api;
 import steamworks.raw.steam_gameserver;
@@ -94,6 +94,22 @@ ISteamClient* SteamClient() nothrow @nogc
 ISteamClient* SteamGameServerClient() nothrow @nogc
 {
     return SteamClient();
+}
+
+/// Whether an HTTP status code is in the 2xx success range.
+///
+/// Mirrors the inline `BIsHTTPStatusSuccess` of steamhttpenums.h.
+bool BIsHTTPStatusSuccess(EHTTPStatusCode eStatus) @safe pure nothrow @nogc
+{
+    return eStatus >= 200 && eStatus <= 299;
+}
+
+unittest
+{
+    assert(BIsHTTPStatusSuccess(EHTTPStatusCode.k_EHTTPStatusCode200OK));
+    assert(BIsHTTPStatusSuccess(cast(EHTTPStatusCode) 299));
+    assert(!BIsHTTPStatusSuccess(EHTTPStatusCode.k_EHTTPStatusCode404NotFound));
+    assert(!BIsHTTPStatusSuccess(EHTTPStatusCode.k_EHTTPStatusCode100Continue));
 }
 
 unittest
