@@ -1,0 +1,159 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Unit tests in both configurations, the smoke and D-layer tests against
+  # Valve's library (without a Steam client), and the examples.
+  test:
+    name: test (${{ matrix.os }}, ${{ matrix.dc }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        dc: [dmd-latest, ldc-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dlang-community/setup-dlang@v2
+        with:
+          compiler: ${{ matrix.dc }}
+
+      - name: Fetch the Steamworks SDK
+        run: tools/fetch-sdk.sh
+
+      # The linked configuration needs the library at link time (LIBRARY_PATH,
+      # or LIB for the MSVC linker) and at run time (the loader's search
+      # path). Test executables built in the repository root are not next to
+      # the library, so the loader path points at the SDK.
+      - name: Point the linker and loader at the SDK's library
+        run: |
+          case "$RUNNER_OS" in
+            Linux)
+              lib="$PWD/sdk/redistributable_bin/linux64"
+              echo "LIBRARY_PATH=$lib" >> "$GITHUB_ENV"
+              echo "LD_LIBRARY_PATH=$lib" >> "$GITHUB_ENV"
+              ;;
+            macOS)
+              lib="$PWD/sdk/redistributable_bin/osx"
+              echo "LIBRARY_PATH=$lib" >> "$GITHUB_ENV"
+              echo "DYLD_LIBRARY_PATH=$lib" >> "$GITHUB_ENV"
+              ;;
+            Windows)
+              lib="$(cygpath -w "$PWD/sdk/redistributable_bin/win64")"
+              echo "LIB=$lib${LIB:+;$LIB}" >> "$GITHUB_ENV"
+              echo "$lib" >> "$GITHUB_PATH"
+              echo "DUB_ARCH=--arch=x86_64" >> "$GITHUB_ENV"
+              ;;
+          esac
+
+      - name: Unit tests (dynamic)
+        run: dub test $DUB_ARCH
+
+      - name: Unit tests (linked)
+        run: dub test $DUB_ARCH -c linked
+
+      - name: Smoke and D-layer tests against the library
+        run: |
+          for c in linked dynamic; do
+            dub build -q $DUB_ARCH --root=tests/smoke -c $c
+            tests/smoke/bin/smoke-$c
+            dub build -q $DUB_ARCH --root=tests/layer -c $c
+            tests/layer/bin/layer-$c
+          done
+
+      - name: Build the examples
+        run: |
+          for e in examples/*/; do
+            echo "== $e"
+            dub build -q $DUB_ARCH --root="$e"
+          done
+
+      - name: Run an example without Steam
+        run: |
+          cd examples/dispatcher
+          bin/dispatcher --frames 1
+
+  # Layouts, signatures, values, vtables and symbols against the SDK headers
+  # and every platform's library: ldc2 cross-compiles for all eight targets
+  # and Xcode's LLVM tools read Mach-O, ELF and COFF.
+  abi-macos:
+    name: ABI (macOS, every target)
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dlang-community/setup-dlang@v2
+        with:
+          compiler: ldc-latest
+
+      - name: Fetch the Steamworks SDK
+        run: tools/fetch-sdk.sh
+
+      - name: Build the pinned dfmt
+        run: echo "DFMT=$(tools/dfmt.sh)" >> "$GITHUB_ENV"
+
+      - name: Generator unit tests
+        run: dub test --root=tools/gen
+
+      - name: ABI and symbol checks
+        run: DCS=ldc2 tools/check-abi.sh
+
+      - name: C++ calls into the D response classes
+        run: DCS=ldc2 tests/vtable/run.sh
+
+  # The checks that run natively on Linux, with both compilers: the probe's
+  # expectations, C ABI calls (System V x86-64) and C++ virtual calls into D.
+  abi-linux:
+    name: ABI (Linux x86_64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dlang-community/setup-dlang@v2
+        with:
+          compiler: dmd-latest
+
+      - uses: dlang-community/setup-dlang@v2
+        with:
+          compiler: ldc-latest
+
+      - name: Fetch the Steamworks SDK
+        run: tools/fetch-sdk.sh
+
+      - name: Expected layouts and C ABI calls
+        run: DCS="dmd ldc2" tools/check-abi.sh probe cabi
+
+      - name: C++ calls into the D response classes
+        run: DCS="dmd ldc2" tests/vtable/run.sh
+
+  lint:
+    name: format and lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dlang-community/setup-dlang@v2
+        with:
+          compiler: ldc-latest
+
+      - name: dfmt
+        run: tools/format.sh --check
+
+      - name: D-Scanner
+        run: tools/lint.sh

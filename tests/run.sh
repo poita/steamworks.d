@@ -3,8 +3,9 @@
 # ABI and symbol checks of tools/check-abi.sh (stale output, layouts and
 # signatures for all platforms, export tables, C ABI calls), the C++ calls
 # into D, and the smoke and D-layer tests against the SDK's library, plus the
-# linked-configuration unit tests. Needs the
-# SDK in ./sdk (tools/fetch-sdk.sh), clang++, dfmt, dmd and ldc2.
+# linked-configuration unit tests, the examples, formatting and lint. Needs
+# the SDK in ./sdk (tools/fetch-sdk.sh), clang++, dmd and ldc2; dfmt and
+# D-Scanner are built with dub when the pinned versions are not installed.
 # Builds run one at a time.
 set -eu
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -38,8 +39,15 @@ for dc in dmd ldc2; do
         DYLD_LIBRARY_PATH="$ROOT/sdk/redistributable_bin/osx" LD_LIBRARY_PATH="$ROOT/sdk/redistributable_bin/linux64" \
         dub test -q -c linked --compiler=$dc
 done
-step "example builds"
-dub build -q --root=examples/manual-dispatch
-dub build -q --root=examples/dispatcher
+for dc in dmd ldc2; do
+    for e in examples/*/; do
+        step "example $(basename "$e") ($dc)"
+        dub build -q --root="$e" --compiler=$dc
+    done
+done
+step "formatting (tools/format.sh --check)"
+tools/format.sh --check
+step "lint (tools/lint.sh)"
+tools/lint.sh
 echo
 echo "all checks passed"
