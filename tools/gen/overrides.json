@@ -1,0 +1,339 @@
+{
+  "_about": "Explicit corrections and additions applied on top of steam_api.json. The SDK headers are the ground truth; every entry names the header it comes from and why steam_api.json alone is not enough. tests/abi verifies all of it against the headers with clang.",
+
+  "ignoredHeaders": {
+    "_reason": "Headers outside the flat API that the generator does not scan: isteammusicremote.h does not compile against this SDK (k_iSteamMusicRemoteCallbacks is undefined) and ISteamMusicRemote has no flat functions; the PS3 headers are obsolete.",
+    "names": [ "isteammusicremote.h", "isteamps3overlayrenderer.h", "steamps3params.h" ]
+  },
+
+  "enumBaseTypes": {
+    "_reason": "steam_api.json records enumerators as signed 32-bit values. ERemoteStoragePlatform::k_ERemoteStoragePlatformAll is 0xffffffff in isteamremotestorage.h, which makes the C++ underlying type unsigned int with GCC and Clang (MSVC keeps int; the size is 4 bytes either way).",
+    "ERemoteStoragePlatform": "uint"
+  },
+
+  "typeMap": {
+    "ISteamHTMLSurface::EHTMLMouseButton": "EHTMLMouseButton",
+    "ISteamHTMLSurface::EHTMLMouseCursor": "EHTMLMouseCursor",
+    "ISteamHTMLSurface::EHTMLKeyModifiers": "EHTMLKeyModifiers",
+    "SteamInputActionEvent_t::AnalogAction_t": "SteamInputActionEvent_t.AnalogAction_t"
+  },
+
+  "typedefReplacements": [
+    {
+      "name": "intp",
+      "d": "alias intp = ptrdiff_t;",
+      "reason": "steamtypes.h: pointer-sized (long long on 64-bit targets, int on 32-bit); steam_api.json only records the 64-bit spelling."
+    },
+    {
+      "name": "uintp",
+      "d": "alias uintp = size_t;",
+      "reason": "steamtypes.h: pointer-sized (unsigned long long on 64-bit targets, unsigned int on 32-bit)."
+    },
+    {
+      "name": "lint64",
+      "d": "version (Windows) alias lint64 = long; else alias lint64 = c_long;",
+      "reason": "steamtypes.h: __int64 with MSVC but `long int` elsewhere, which is 32 bits on 32-bit Linux."
+    },
+    {
+      "name": "ulint64",
+      "d": "version (Windows) alias ulint64 = ulong; else alias ulint64 = c_ulong;",
+      "reason": "steamtypes.h: unsigned __int64 with MSVC but `unsigned long int` elsewhere."
+    }
+  ],
+
+  "extraTypedefs": [
+    {
+      "name": "uint64_steamid",
+      "type": "unsigned long long",
+      "header": "steam_api_flat.h",
+      "doc": "A CSteamID passed or returned by value through the flat API."
+    },
+    {
+      "name": "uint64_gameid",
+      "type": "unsigned long long",
+      "header": "steam_api_flat.h",
+      "doc": "A CGameID passed or returned by value through the flat API."
+    },
+    {
+      "name": "SteamAPIWarningMessageHook_t",
+      "type": "void (*)(int, const char *)",
+      "header": "steam_api_common.h",
+      "doc": "Receives warning messages from the Steam API; see ISteamClient::SetWarningMessageHook and ISteamUtils::SetWarningMessageHook."
+    },
+    {
+      "name": "SteamAPI_CheckCallbackRegistered_t",
+      "type": "unsigned int (*)(int)",
+      "header": "steam_api_common.h",
+      "doc": "Callback-registration query hook."
+    },
+    {
+      "name": "SteamDatagramErrMsg",
+      "type": "SteamNetworkingErrMsg",
+      "header": "steamnetworkingtypes.h",
+      "doc": "Legacy name for SteamNetworkingErrMsg."
+    },
+    {
+      "name": "ISteamNetworkingMessage",
+      "type": "SteamNetworkingMessage_t",
+      "header": "steamnetworkingtypes.h",
+      "doc": "Legacy name for SteamNetworkingMessage_t."
+    },
+    {
+      "name": "ControllerAnalogActionData_t",
+      "type": "InputAnalogActionData_t",
+      "header": "isteamcontroller.h",
+      "doc": "ISteamController's name for InputAnalogActionData_t (a #define in the headers)."
+    },
+    {
+      "name": "ControllerDigitalActionData_t",
+      "type": "InputDigitalActionData_t",
+      "header": "isteamcontroller.h",
+      "doc": "ISteamController's name for InputDigitalActionData_t (a #define in the headers)."
+    },
+    {
+      "name": "ControllerMotionData_t",
+      "type": "InputMotionData_t",
+      "header": "isteamcontroller.h",
+      "doc": "ISteamController's name for InputMotionData_t (a #define in the headers)."
+    }
+  ],
+
+  "manualTypes": {
+    "_reason": "Types the generator cannot express from steam_api.json (unions, bitfields, nested types, C++ inline members). They are written by hand in the named modules and verified by tests/abi like every generated type.",
+    "CSteamID": "steamworks.raw.steamid",
+    "CGameID": "steamworks.raw.steamid",
+    "SteamIPAddress_t": "steamworks.raw.manual",
+    "SteamNetworkingIPAddr": "steamworks.raw.manual",
+    "SteamNetworkingIdentity": "steamworks.raw.manual",
+    "SteamNetworkingConfigValue_t": "steamworks.raw.manual",
+    "SteamInputActionEvent_t": "steamworks.raw.manual",
+    "RemotePlayInput_t": "steamworks.raw.manual"
+  },
+
+  "manualClasses": {
+    "_reason": "Hand-written extern(C++) classes (steamworks.raw.manual). The flat API passes them by pointer, which is a class reference in D.",
+    "names": [ "CCallbackBase", "ISteamNetworkingConnectionSignaling", "ISteamNetworkingSignalingRecvContext" ]
+  },
+
+  "manualProbe": {
+    "_reason": "C++ field lists of hand-written types for the ABI probe. Keys are C++ qualified names.",
+    "CSteamID": ["m_steamid"],
+    "CGameID": ["m_ulGameID", "m_gameID"],
+    "SteamIPAddress_t": ["m_unIPv4", "m_rgubIPv6", "m_ipv6Qword", "m_eType"],
+    "SteamNetworkingIPAddr": ["m_ipv6", "m_ipv4", "m_port"],
+    "SteamNetworkingIPAddr::IPv4MappedAddress": ["m_8zeros", "m_0000", "m_ffff", "m_ip"],
+    "SteamNetworkingIdentity": ["m_eType", "m_cbSize", "m_steamID64", "m_PSNID", "m_szGenericString", "m_szXboxPairwiseID", "m_genericBytes", "m_szUnknownRawString", "m_ip", "m_reserved"],
+    "SteamNetworkingConfigValue_t": ["m_eValue", "m_eDataType", "m_val"],
+    "SteamInputActionEvent_t": ["controllerHandle", "eEventType", "analogAction", "digitalAction"],
+    "SteamInputActionEvent_t::AnalogAction_t": ["actionHandle", "analogActionData"],
+    "SteamInputActionEvent_t::DigitalAction_t": ["actionHandle", "digitalActionData"],
+    "RemotePlayInput_t": ["m_unSessionID", "m_eType", "m_MouseMotion", "m_eMouseButton", "m_MouseWheel", "m_Key", "padding"],
+    "ScePadTriggerEffectOffParam": ["padding"],
+    "ScePadTriggerEffectFeedbackParam": ["position", "strength", "padding"],
+    "ScePadTriggerEffectWeaponParam": ["startPosition", "endPosition", "strength", "padding"],
+    "ScePadTriggerEffectVibrationParam": ["position", "amplitude", "frequency", "padding"],
+    "ScePadTriggerEffectMultiplePositionFeedbackParam": ["strength", "padding"],
+    "ScePadTriggerEffectSlopeFeedbackParam": ["startPosition", "endPosition", "startStrength", "endStrength", "padding"],
+    "ScePadTriggerEffectMultiplePositionVibrationParam": ["frequency", "amplitude", "padding"],
+    "ScePadTriggerEffectCommandData": ["offParam", "feedbackParam", "weaponParam", "vibrationParam", "multiplePositionFeedbackParam", "slopeFeedbackParam", "multiplePositionVibrationParam"],
+    "ScePadTriggerEffectCommand": ["mode", "padding", "commandData"],
+    "ScePadTriggerEffectParam": ["triggerMask", "padding", "command"],
+    "CCallbackBase": ["m_nCallbackFlags", "m_iCallback"]
+  },
+
+  "manualEnumsProbe": {
+    "_reason": "Hand-written enums checked by the ABI probe: D qualified name to C++ qualified name and enumerators.",
+    "ScePadTriggerEffectMode": {
+      "cpp": "ScePadTriggerEffectMode",
+      "values": [
+        "SCE_PAD_TRIGGER_EFFECT_MODE_OFF", "SCE_PAD_TRIGGER_EFFECT_MODE_FEEDBACK", "SCE_PAD_TRIGGER_EFFECT_MODE_WEAPON",
+        "SCE_PAD_TRIGGER_EFFECT_MODE_VIBRATION", "SCE_PAD_TRIGGER_EFFECT_MODE_MULTIPLE_POSITION_FEEDBACK",
+        "SCE_PAD_TRIGGER_EFFECT_MODE_SLOPE_FEEDBACK", "SCE_PAD_TRIGGER_EFFECT_MODE_MULTIPLE_POSITION_VIBRATION"
+      ]
+    },
+    "CGameID.EGameIDType": {
+      "cpp": "CGameID::EGameIDType",
+      "values": [ "k_EGameIDTypeApp", "k_EGameIDTypeGameMod", "k_EGameIDTypeShortcut", "k_EGameIDTypeP2P" ]
+    }
+  },
+
+  "manualConstsProbe": {
+    "_reason": "Hand-written constants checked by the ABI probe: D qualified name to C++ expression.",
+    "SteamNetworkingIPAddr.k_cchMaxString": "SteamNetworkingIPAddr::k_cchMaxString",
+    "SteamNetworkingIdentity.k_cchMaxString": "SteamNetworkingIdentity::k_cchMaxString",
+    "SteamNetworkingIdentity.k_cchMaxGenericString": "SteamNetworkingIdentity::k_cchMaxGenericString",
+    "SteamNetworkingIdentity.k_cchMaxXboxPairwiseID": "SteamNetworkingIdentity::k_cchMaxXboxPairwiseID",
+    "SteamNetworkingIdentity.k_cbMaxGenericBytes": "SteamNetworkingIdentity::k_cbMaxGenericBytes",
+    "SCE_PAD_TRIGGER_EFFECT_TRIGGER_MASK_L2": "SCE_PAD_TRIGGER_EFFECT_TRIGGER_MASK_L2",
+    "SCE_PAD_TRIGGER_EFFECT_TRIGGER_MASK_R2": "SCE_PAD_TRIGGER_EFFECT_TRIGGER_MASK_R2",
+    "SCE_PAD_TRIGGER_EFFECT_PARAM_INDEX_FOR_L2": "SCE_PAD_TRIGGER_EFFECT_PARAM_INDEX_FOR_L2",
+    "SCE_PAD_TRIGGER_EFFECT_PARAM_INDEX_FOR_R2": "SCE_PAD_TRIGGER_EFFECT_PARAM_INDEX_FOR_R2",
+    "SCE_PAD_TRIGGER_EFFECT_TRIGGER_NUM": "SCE_PAD_TRIGGER_EFFECT_TRIGGER_NUM",
+    "SCE_PAD_TRIGGER_EFFECT_CONTROL_POINT_NUM": "SCE_PAD_TRIGGER_EFFECT_CONTROL_POINT_NUM",
+    "VALVE_CALLBACK_PACK": "sizeof(ValvePackingSentinel_t) == 24 ? 4 : 8"
+  },
+
+  "jsonOnlyStructs": {
+    "_reason": "Only forward-declared in the public headers (defined in steamdatagram_gamecoordinator.h, which the SDK does not ship). Their layout comes from steam_api.json; every field is naturally aligned, so the layout does not depend on packing.",
+    "SteamDatagramHostedAddress": "isteamnetworkingsockets.h",
+    "SteamDatagramGameCoordinatorServerLogin": "isteamnetworkingsockets.h"
+  },
+
+  "opaqueTypes": [
+    {
+      "name": "SteamDatagramRelayAuthTicket",
+      "header": "steamnetworkingtypes.h",
+      "doc": "Only forward-declared in the SDK (defined in steamdatagram_tickets.h, which the SDK does not ship)."
+    }
+  ],
+
+  "extraStructs": [
+    {
+      "struct": "CallbackMsg_t",
+      "header": "steam_api_internal.h",
+      "doc": "One callback delivered by SteamAPI_ManualDispatch_GetNextCallback.",
+      "fields": [
+        { "fieldname": "m_hSteamUser", "fieldtype": "HSteamUser" },
+        { "fieldname": "m_iCallback", "fieldtype": "int" },
+        { "fieldname": "m_pubParam", "fieldtype": "uint8 *" },
+        { "fieldname": "m_cubParam", "fieldtype": "int" }
+      ]
+    },
+    {
+      "struct": "ValvePackingSentinel_t",
+      "header": "steamclientpublic.h",
+      "doc": "Sentinel the headers use to assert the callback packing: 24 bytes with VALVE_CALLBACK_PACK_SMALL, 32 with VALVE_CALLBACK_PACK_LARGE.",
+      "fields": [
+        { "fieldname": "m_u32", "fieldtype": "uint32" },
+        { "fieldname": "m_u64", "fieldtype": "uint64" },
+        { "fieldname": "m_u16", "fieldtype": "uint16" },
+        { "fieldname": "m_d", "fieldtype": "double" }
+      ]
+    }
+  ],
+
+  "structConsts": {
+    "GetTicketForWebApiResponse_t": [
+      { "constname": "k_nCubTicketMaxLength", "consttype": "int", "constval": "2560", "header": "isteamuser.h" }
+    ]
+  },
+
+  "extraConsts": [
+    { "constname": "k_cchMaxRichPresenceKeys", "consttype": "int", "constval": "30", "header": "isteamfriends.h" },
+    { "constname": "k_cchMaxRichPresenceKeyLength", "consttype": "int", "constval": "64", "header": "isteamfriends.h" },
+    { "constname": "k_cchMaxRichPresenceValueLength", "consttype": "int", "constval": "256", "header": "isteamfriends.h" },
+    { "constname": "k_cchStatNameMax", "consttype": "int", "constval": "128", "header": "isteamuserstats.h" },
+    { "constname": "k_cchLeaderboardNameMax", "consttype": "int", "constval": "128", "header": "isteamuserstats.h" },
+    { "constname": "k_cLeaderboardDetailsMax", "consttype": "int", "constval": "64", "header": "isteamuserstats.h" },
+    { "constname": "k_iSteamUserCallbacks", "consttype": "int", "constval": "100", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamGameServerCallbacks", "consttype": "int", "constval": "200", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamFriendsCallbacks", "consttype": "int", "constval": "300", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamBillingCallbacks", "consttype": "int", "constval": "400", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamMatchmakingCallbacks", "consttype": "int", "constval": "500", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamContentServerCallbacks", "consttype": "int", "constval": "600", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamUtilsCallbacks", "consttype": "int", "constval": "700", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamAppsCallbacks", "consttype": "int", "constval": "1000", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamUserStatsCallbacks", "consttype": "int", "constval": "1100", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamNetworkingCallbacks", "consttype": "int", "constval": "1200", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamNetworkingSocketsCallbacks", "consttype": "int", "constval": "1220", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamNetworkingMessagesCallbacks", "consttype": "int", "constval": "1250", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamNetworkingUtilsCallbacks", "consttype": "int", "constval": "1280", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamRemoteStorageCallbacks", "consttype": "int", "constval": "1300", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamGameServerItemsCallbacks", "consttype": "int", "constval": "1500", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamGameCoordinatorCallbacks", "consttype": "int", "constval": "1700", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamGameServerStatsCallbacks", "consttype": "int", "constval": "1800", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteam2AsyncCallbacks", "consttype": "int", "constval": "1900", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamGameStatsCallbacks", "consttype": "int", "constval": "2000", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamHTTPCallbacks", "consttype": "int", "constval": "2100", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamScreenshotsCallbacks", "consttype": "int", "constval": "2300", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamStreamLauncherCallbacks", "consttype": "int", "constval": "2600", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamControllerCallbacks", "consttype": "int", "constval": "2800", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamUGCCallbacks", "consttype": "int", "constval": "3400", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamStreamClientCallbacks", "consttype": "int", "constval": "3500", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamMusicCallbacks", "consttype": "int", "constval": "4000", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamGameNotificationCallbacks", "consttype": "int", "constval": "4400", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamHTMLSurfaceCallbacks", "consttype": "int", "constval": "4500", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamVideoCallbacks", "consttype": "int", "constval": "4600", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamInventoryCallbacks", "consttype": "int", "constval": "4700", "header": "steam_api_internal.h" },
+    { "constname": "k_ISteamParentalSettingsCallbacks", "consttype": "int", "constval": "5000", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamGameSearchCallbacks", "consttype": "int", "constval": "5200", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamPartiesCallbacks", "consttype": "int", "constval": "5300", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamSTARCallbacks", "consttype": "int", "constval": "5500", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamRemotePlayCallbacks", "consttype": "int", "constval": "5700", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamChatCallbacks", "consttype": "int", "constval": "5900", "header": "steam_api_internal.h" },
+    { "constname": "k_iSteamTimelineCallbacks", "consttype": "int", "constval": "6000", "header": "steam_api_internal.h" }
+  ],
+
+  "jsonOnlyConsts": {
+    "_reason": "Present in steam_api.json but defined in headers the SDK does not ship, so the ABI probe cannot check them.",
+    "names": [
+      "k_cbSteamDatagramMaxSerializedTicket",
+      "k_cbMaxSteamDatagramGameCoordinatorServerLoginAppData",
+      "k_cbMaxSteamDatagramGameCoordinatorServerLoginSerialized"
+    ]
+  },
+
+  "cppInterfaces": {
+    "_reason": "C++ callback interfaces the game implements and passes to ISteamMatchmakingServers. Emitted as extern(C++) abstract classes so a D subclass has the vtable layout Steam expects.",
+    "names": [
+      "ISteamMatchmakingServerListResponse",
+      "ISteamMatchmakingPingResponse",
+      "ISteamMatchmakingPlayersResponse",
+      "ISteamMatchmakingRulesResponse"
+    ]
+  },
+
+  "extraFunctions": [
+    { "name": "SteamAPI_InitFlat", "returntype": "ESteamAPIInitResult", "params": [ { "paramname": "pOutErrMsg", "paramtype": "SteamErrMsg *" } ], "header": "steam_api.h",
+      "doc": "Initializes the Steam API for flat-API users, checking the interface versions this binding was generated for. Prefer SteamAPI_InitEx, which mirrors the C++ inline function." },
+    { "name": "SteamAPI_Shutdown", "returntype": "void", "params": [], "header": "steam_api.h", "doc": "Shuts down the Steam API." },
+    { "name": "SteamAPI_RestartAppIfNecessary", "returntype": "bool", "params": [ { "paramname": "unOwnAppID", "paramtype": "uint32" } ], "header": "steam_api.h",
+      "doc": "Restarts the game through Steam if it was not launched by Steam. Returns true when the process should exit." },
+    { "name": "SteamAPI_ReleaseCurrentThreadMemory", "returntype": "void", "params": [], "header": "steam_api.h", "doc": "Frees the API's thread-local memory for the calling thread." },
+    { "name": "SteamAPI_WriteMiniDump", "returntype": "void", "params": [ { "paramname": "uStructuredExceptionCode", "paramtype": "uint32" }, { "paramname": "pvExceptionInfo", "paramtype": "void *" }, { "paramname": "uBuildID", "paramtype": "uint32" } ], "header": "steam_api.h", "doc": "Writes a minidump (Windows only; a no-op elsewhere)." },
+    { "name": "SteamAPI_SetMiniDumpComment", "returntype": "void", "params": [ { "paramname": "pchMsg", "paramtype": "const char *" } ], "header": "steam_api.h", "doc": "Sets a comment to include in the next minidump." },
+    { "name": "SteamAPI_IsSteamRunning", "returntype": "bool", "params": [], "header": "steam_api.h", "doc": "Returns whether a Steam client is running. Safe to call before initialization." },
+    { "name": "SteamAPI_GetSteamInstallPath", "returntype": "const char *", "params": [], "header": "steam_api.h", "doc": "Returns the Steam client install path, or an empty string." },
+    { "name": "SteamAPI_SetTryCatchCallbacks", "returntype": "void", "params": [ { "paramname": "bTryCatchCallbacks", "paramtype": "bool" } ], "header": "steam_api.h", "doc": "Controls whether callback dispatch catches C++ exceptions." },
+    { "name": "SteamAPI_InitSafe", "returntype": "bool", "params": [], "header": "steam_api.h", "doc": "Legacy initialization entry point (VERSION_SAFE_STEAM_API_INTERFACES)." },
+    { "name": "SteamAPI_UseBreakpadCrashHandler", "returntype": "void", "params": [ { "paramname": "pchVersion", "paramtype": "const char *" }, { "paramname": "pchDate", "paramtype": "const char *" }, { "paramname": "pchTime", "paramtype": "const char *" }, { "paramname": "bFullMemoryDumps", "paramtype": "bool" }, { "paramname": "pvContext", "paramtype": "void *" }, { "paramname": "m_pfnPreMinidumpCallback", "paramtype": "PFNPreMinidumpCallback" } ], "header": "steam_api.h", "doc": "Enables the Breakpad crash handler." },
+    { "name": "SteamAPI_SetBreakpadAppID", "returntype": "void", "params": [ { "paramname": "unAppID", "paramtype": "uint32" } ], "header": "steam_api.h", "doc": "Sets the app ID reported by the Breakpad crash handler." },
+    { "name": "SteamAPI_ManualDispatch_Init", "returntype": "void", "params": [], "header": "steam_api.h", "doc": "Switches to manual callback dispatch. Call once, before SteamAPI_Init." },
+    { "name": "SteamAPI_ManualDispatch_RunFrame", "returntype": "void", "params": [ { "paramname": "hSteamPipe", "paramtype": "HSteamPipe" } ], "header": "steam_api.h", "doc": "Performs per-frame work for manual dispatch." },
+    { "name": "SteamAPI_ManualDispatch_GetNextCallback", "returntype": "bool", "params": [ { "paramname": "hSteamPipe", "paramtype": "HSteamPipe" }, { "paramname": "pCallbackMsg", "paramtype": "CallbackMsg_t *" } ], "header": "steam_api.h", "doc": "Fetches the next pending callback, if any." },
+    { "name": "SteamAPI_ManualDispatch_FreeLastCallback", "returntype": "void", "params": [ { "paramname": "hSteamPipe", "paramtype": "HSteamPipe" } ], "header": "steam_api.h", "doc": "Releases the callback returned by the last SteamAPI_ManualDispatch_GetNextCallback." },
+    { "name": "SteamAPI_ManualDispatch_GetAPICallResult", "returntype": "bool", "params": [ { "paramname": "hSteamPipe", "paramtype": "HSteamPipe" }, { "paramname": "hSteamAPICall", "paramtype": "SteamAPICall_t" }, { "paramname": "pCallback", "paramtype": "void *" }, { "paramname": "cubCallback", "paramtype": "int" }, { "paramname": "iCallbackExpected", "paramtype": "int" }, { "paramname": "pbFailed", "paramtype": "bool *" } ], "header": "steam_api.h", "doc": "Copies the result of a completed API call (see SteamAPICallCompleted_t)." },
+    { "name": "SteamInternal_SteamAPI_Init", "returntype": "ESteamAPIInitResult", "params": [ { "paramname": "pszInternalCheckInterfaceVersions", "paramtype": "const char *" }, { "paramname": "pOutErrMsg", "paramtype": "SteamErrMsg *" } ], "header": "steam_api.h", "doc": "Initialization entry point used by the inline SteamAPI_InitEx." },
+    { "name": "SteamAPI_RunCallbacks", "returntype": "void", "params": [], "header": "steam_api_common.h", "doc": "Dispatches all queued callbacks and call results." },
+    { "name": "SteamGameServer_RunCallbacks", "returntype": "void", "params": [], "header": "steam_api_common.h", "doc": "Dispatches queued game server callbacks and call results." },
+    { "name": "SteamAPI_GetHSteamPipe", "returntype": "HSteamPipe", "params": [], "header": "steam_api_internal.h", "doc": "Returns the client's Steam pipe." },
+    { "name": "SteamAPI_GetHSteamUser", "returntype": "HSteamUser", "params": [], "header": "steam_api_internal.h", "doc": "Returns the client's Steam user handle." },
+    { "name": "SteamGameServer_GetHSteamPipe", "returntype": "HSteamPipe", "params": [], "header": "steam_api_internal.h", "doc": "Returns the game server's Steam pipe." },
+    { "name": "SteamGameServer_GetHSteamUser", "returntype": "HSteamUser", "params": [], "header": "steam_api_internal.h", "doc": "Returns the game server's Steam user handle." },
+    { "name": "SteamInternal_ContextInit", "returntype": "void *", "params": [ { "paramname": "pContextInitData", "paramtype": "void *" } ], "header": "steam_api_internal.h", "doc": "Interface-accessor cache used by the C++ inline accessors." },
+    { "name": "SteamInternal_CreateInterface", "returntype": "void *", "params": [ { "paramname": "ver", "paramtype": "const char *" } ], "header": "steam_api_internal.h", "doc": "Creates a global interface (e.g. ISteamClient) by version string." },
+    { "name": "SteamInternal_FindOrCreateUserInterface", "returntype": "void *", "params": [ { "paramname": "hSteamUser", "paramtype": "HSteamUser" }, { "paramname": "pszVersion", "paramtype": "const char *" } ], "header": "steam_api_internal.h", "doc": "Returns a client interface by version string." },
+    { "name": "SteamInternal_FindOrCreateGameServerInterface", "returntype": "void *", "params": [ { "paramname": "hSteamUser", "paramtype": "HSteamUser" }, { "paramname": "pszVersion", "paramtype": "const char *" } ], "header": "steam_api_internal.h", "doc": "Returns a game server interface by version string." },
+    { "name": "SteamAPI_RegisterCallback", "returntype": "void", "params": [ { "paramname": "pCallback", "paramtype": "CCallbackBase *" }, { "paramname": "iCallback", "paramtype": "int" } ], "header": "steam_api_internal.h", "doc": "Registers a CCallbackBase to receive callback `iCallback`." },
+    { "name": "SteamAPI_UnregisterCallback", "returntype": "void", "params": [ { "paramname": "pCallback", "paramtype": "CCallbackBase *" } ], "header": "steam_api_internal.h", "doc": "Unregisters a callback object." },
+    { "name": "SteamAPI_RegisterCallResult", "returntype": "void", "params": [ { "paramname": "pCallback", "paramtype": "CCallbackBase *" }, { "paramname": "hAPICall", "paramtype": "SteamAPICall_t" } ], "header": "steam_api_internal.h", "doc": "Registers a CCallbackBase to receive the result of `hAPICall`." },
+    { "name": "SteamAPI_UnregisterCallResult", "returntype": "void", "params": [ { "paramname": "pCallback", "paramtype": "CCallbackBase *" }, { "paramname": "hAPICall", "paramtype": "SteamAPICall_t" } ], "header": "steam_api_internal.h", "doc": "Cancels a call-result registration." },
+    { "name": "SteamGameServer_Shutdown", "returntype": "void", "params": [], "header": "steam_gameserver.h", "doc": "Shuts down the game server interfaces." },
+    { "name": "SteamGameServer_BSecure", "returntype": "bool", "params": [], "header": "steam_gameserver.h", "doc": "Returns whether the game server is VAC secure." },
+    { "name": "SteamGameServer_GetSteamID", "returntype": "uint64", "params": [], "header": "steam_gameserver.h", "doc": "Returns the game server's Steam ID as a 64-bit value." },
+    { "name": "SteamInternal_GameServer_Init_V2", "returntype": "ESteamAPIInitResult", "params": [ { "paramname": "unIP", "paramtype": "uint32" }, { "paramname": "usGamePort", "paramtype": "uint16" }, { "paramname": "usQueryPort", "paramtype": "uint16" }, { "paramname": "eServerMode", "paramtype": "EServerMode" }, { "paramname": "pchVersionString", "paramtype": "const char *" }, { "paramname": "pszInternalCheckInterfaceVersions", "paramtype": "const char *" }, { "paramname": "pOutErrMsg", "paramtype": "SteamErrMsg *" } ], "header": "steam_gameserver.h", "doc": "Initialization entry point used by the inline SteamGameServer_InitEx." }
+  ],
+
+  "unboundExports": {
+    "_reason": "Symbols exported by libsteam_api that the SDK headers do not declare (legacy or internal). They are intentionally not bound; tests compare this list with the library's export table.",
+    "names": [
+      "GetHSteamPipe",
+      "GetHSteamUser",
+      "SteamAPI_InitAnonymousUser",
+      "SteamClient",
+      "SteamGameServer_GetIPCCallCount",
+      "SteamGameServer_InitSafe",
+      "g_pSteamClientGameServer"
+    ]
+  }
+}
