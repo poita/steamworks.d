@@ -29,11 +29,13 @@
 /// steam.unregister(overlay);
 /// ---
 ///
-/// Handlers may register and unregister handlers (including themselves) and
-/// cancel call results while being called. `runFrame` allocates nothing from
-/// the GC; registration stores handlers in `malloc` memory that the GC scans.
-/// `NogcCallbackDispatcher` requires `nothrow @nogc` handlers, which makes
-/// `runFrame` itself `nothrow @nogc`.
+/// Handlers may register and unregister handlers (including themselves),
+/// cancel call results, and even reset or destroy the dispatcher while being
+/// called. `runFrame` allocates nothing from the GC; registration stores
+/// handlers in `malloc` memory that the GC scans. `NogcCallbackDispatcher`
+/// requires `nothrow @nogc` handlers, which makes `runFrame` itself
+/// `nothrow @nogc`. With `@safe` handlers, the whole dispatcher is usable
+/// from `@safe` code.
 ///
 /// A game server has its own pipe: use `CallbackDispatcher.forGameServer()`
 /// (one dispatcher per pipe when a process is both client and server).
@@ -44,7 +46,7 @@ module steamworks.dispatch;
 
 import core.atomic : atomicOp;
 import core.memory : GC;
-import core.stdc.stdlib : free, malloc, realloc;
+import core.stdc.stdlib : calloc, free, malloc, realloc;
 import core.stdc.string : memcpy, memset;
 import std.traits : FunctionAttribute, functionAttributes, FunctionTypeOf, getUDAs, isCallable,
     isDelegate, isFunctionPointer, Parameters, Unqual;
@@ -73,51 +75,52 @@ template CallResultOf(alias fn)
 
 /// The manual-dispatch operations a dispatcher needs, one call each.
 /// `manualDispatchSource` forwards them to Steam; tests implement them to
-/// inject synthetic callbacks.
+/// inject synthetic callbacks. Implementations are `@safe` or `@trusted`, so
+/// that `runFrame` is usable from `@safe` code.
 interface CallbackSource
 {
     /// `SteamAPI_ManualDispatch_RunFrame`: lets Steam do its per-frame work.
-    void runFrame(HSteamPipe pipe) nothrow @nogc;
+    void runFrame(HSteamPipe pipe) @safe nothrow @nogc;
 
     /// `SteamAPI_ManualDispatch_GetNextCallback`: fetches the next queued
     /// callback. Each callback fetched is released with `freeLastCallback`
     /// before the next is fetched.
-    bool nextCallback(HSteamPipe pipe, out CallbackMsg_t msg) nothrow @nogc;
+    bool nextCallback(HSteamPipe pipe, out CallbackMsg_t msg) @safe nothrow @nogc;
 
     /// `SteamAPI_ManualDispatch_FreeLastCallback`: releases the callback
     /// `nextCallback` returned.
-    void freeLastCallback(HSteamPipe pipe) nothrow @nogc;
+    void freeLastCallback(HSteamPipe pipe) @safe nothrow @nogc;
 
     /// `SteamAPI_ManualDispatch_GetAPICallResult`: copies the result of a
     /// completed call into `buffer`. Returns false when no result is
     /// available; `failed` reports an I/O failure.
-    bool apiCallResult(HSteamPipe pipe, SteamAPICall_t call, void[] buffer, int expectedCallback, out bool failed) nothrow @nogc;
+    bool apiCallResult(HSteamPipe pipe, SteamAPICall_t call, void[] buffer, int expectedCallback, out bool failed) @safe nothrow @nogc;
 }
 
 /// `CallbackSource` backed by Steam's manual dispatch functions.
 final class ManualDispatchSource : CallbackSource
 {
     /// Forwards to `SteamAPI_ManualDispatch_RunFrame`.
-    override void runFrame(HSteamPipe pipe) nothrow @nogc
+    override void runFrame(HSteamPipe pipe) @trusted nothrow @nogc
     {
         SteamAPI_ManualDispatch_RunFrame(pipe);
     }
 
     /// Forwards to `SteamAPI_ManualDispatch_GetNextCallback`.
-    override bool nextCallback(HSteamPipe pipe, out CallbackMsg_t msg) nothrow @nogc
+    override bool nextCallback(HSteamPipe pipe, out CallbackMsg_t msg) @trusted nothrow @nogc
     {
         return SteamAPI_ManualDispatch_GetNextCallback(pipe, &msg);
     }
 
     /// Forwards to `SteamAPI_ManualDispatch_FreeLastCallback`.
-    override void freeLastCallback(HSteamPipe pipe) nothrow @nogc
+    override void freeLastCallback(HSteamPipe pipe) @trusted nothrow @nogc
     {
         SteamAPI_ManualDispatch_FreeLastCallback(pipe);
     }
 
     /// Forwards to `SteamAPI_ManualDispatch_GetAPICallResult`.
     override bool apiCallResult(HSteamPipe pipe, SteamAPICall_t call, void[] buffer,
-            int expectedCallback, out bool failed) nothrow @nogc
+            int expectedCallback, out bool failed) @trusted nothrow @nogc
     {
         return SteamAPI_ManualDispatch_GetAPICallResult(pipe, call, buffer.ptr,
                 cast(int) buffer.length, expectedCallback, &failed);
@@ -128,9 +131,45 @@ private __gshared ManualDispatchSource sharedManualDispatch = new ManualDispatch
 
 /// The `CallbackSource` that talks to Steam. Dispatchers created without a
 /// source use it.
-CallbackSource manualDispatchSource() nothrow @nogc
+CallbackSource manualDispatchSource() @trusted nothrow @nogc
 {
     return sharedManualDispatch;
+}
+
+/// Thrown by `CallbackDispatcher.runFrame` when more than one handler threw
+/// while one callback was delivered. A single exception propagates unchanged;
+/// the dispatcher never links exceptions through their `next` field.
+class CallbackHandlersException : Exception
+{
+    /// The exceptions, in the order the handlers threw them, each once.
+    Exception[] exceptions;
+
+    /// Wraps `exceptions` (at least one).
+    this(Exception[] exceptions, string file = __FILE__, size_t line = __LINE__) @safe pure nothrow
+    {
+        import std.conv : to;
+
+        assert(exceptions.length);
+        super(exceptions.length.to!string ~ " callback handlers threw; the first: " ~ exceptions[0].msg, file, line);
+        this.exceptions = exceptions;
+    }
+
+    /// The summary followed by the description of every exception.
+    override void toString(scope void delegate(in char[]) sink) const
+    {
+        import std.conv : to;
+
+        super.toString(sink);
+        foreach (i, e; exceptions)
+        {
+            sink("\n---- handler exception ");
+            sink((i + 1).to!string);
+            sink(" ----\n");
+            e.toString(sink);
+        }
+    }
+
+    alias toString = Exception.toString;
 }
 
 /// Identifies a callback handler registration; pass it to
@@ -163,7 +202,7 @@ struct CallResultToken
 
 private shared ulong lastTokenId;
 
-private ulong newTokenId() nothrow @nogc
+private ulong newTokenId() @safe nothrow @nogc
 {
     return atomicOp!"+="(lastTokenId, 1);
 }
@@ -183,10 +222,21 @@ private enum int anyCallback = int.min;
 /// Handlers receive the callback struct by `ref const`; it is only valid
 /// during the call. Handlers for a callback run in registration order.
 ///
+/// Handlers may register, unregister, cancel and `clear` while being
+/// called. They may also move, reassign or destroy the dispatcher itself
+/// (for example `steam = CallbackDispatcher.init;` when Steam shuts down):
+/// dispatch then stops after that handler, the callback is still released,
+/// and callbacks still queued wait for the next `runFrame`.
+///
 /// With `CallbackDispatcher`, an exception thrown by a handler does not stop
 /// the other handlers of the same callback; once they have run, the
-/// exception (chained with any others) propagates out of `runFrame`, and
-/// callbacks still queued are delivered by the next `runFrame`.
+/// exception propagates out of `runFrame` (a `CallbackHandlersException`
+/// when several handlers threw), and callbacks still queued are delivered by
+/// the next `runFrame`.
+///
+/// Registering a `@safe` handler is `@safe`; registering a `@system` one is
+/// `@system`, which is where the caller vouches for it. `runFrame` is `@safe`
+/// (and `nothrow @nogc` for `NogcCallbackDispatcher`).
 struct BasicCallbackDispatcher(bool nogcHandlers)
 {
     static if (nogcHandlers)
@@ -200,7 +250,13 @@ struct BasicCallbackDispatcher(bool nogcHandlers)
         alias CallResultHandler(T) = void delegate(ref const T, bool ioFailure) nothrow @nogc;
         /// Handler receiving callbacks as Steam delivers them.
         alias RawHandler = void delegate(ref const CallbackMsg_t) nothrow @nogc;
-        private alias Thunk = void function(ref const Entry, ref const CallbackMsg_t, const(void)*, size_t, bool) nothrow @nogc;
+        /// The `@safe` handler types, which register from `@safe` code.
+        alias SafeCallbackHandler(T) = void delegate(ref const T) @safe nothrow @nogc;
+        /// ditto
+        alias SafeCallResultHandler(T) = void delegate(ref const T, bool ioFailure) @safe nothrow @nogc;
+        /// ditto
+        alias SafeRawHandler = void delegate(ref const CallbackMsg_t) @safe nothrow @nogc;
+        private alias Thunk = void function(ref const Entry, ref const CallbackMsg_t, const(void)*, size_t, bool) @safe nothrow @nogc;
     }
     else
     {
@@ -213,7 +269,13 @@ struct BasicCallbackDispatcher(bool nogcHandlers)
         alias CallResultHandler(T) = void delegate(ref const T, bool ioFailure);
         /// Handler receiving callbacks as Steam delivers them.
         alias RawHandler = void delegate(ref const CallbackMsg_t);
-        private alias Thunk = void function(ref const Entry, ref const CallbackMsg_t, const(void)*, size_t, bool);
+        /// The `@safe` handler types, which register from `@safe` code.
+        alias SafeCallbackHandler(T) = void delegate(ref const T) @safe;
+        /// ditto
+        alias SafeCallResultHandler(T) = void delegate(ref const T, bool ioFailure) @safe;
+        /// ditto
+        alias SafeRawHandler = void delegate(ref const CallbackMsg_t) @safe;
+        private alias Thunk = void function(ref const Entry, ref const CallbackMsg_t, const(void)*, size_t, bool) @safe;
     }
 
     /// The Steam pipe to pump; 0 (the default) makes `runFrame` do nothing.
@@ -222,16 +284,14 @@ struct BasicCallbackDispatcher(bool nogcHandlers)
     /// Where callbacks come from; null means `manualDispatchSource()`.
     CallbackSource source;
 
-    private EntryList!Entry callbacks;
-    private EntryList!Entry callResults;
-    private ubyte* resultBuffer;
-    private size_t resultBufferSize;
-    private bool dispatching;
-    private bool needsCompaction;
+    // The handler storage lives outside the struct so that a dispatcher
+    // moved, reassigned or destroyed by one of its handlers leaves the
+    // storage of the running dispatch intact; created on first use.
+    private State* state;
 
     /// Creates a dispatcher for `pipe`, reading callbacks from `source`
     /// (Steam's manual dispatch when null).
-    this(HSteamPipe pipe, CallbackSource source = null) nothrow @nogc
+    this(HSteamPipe pipe, CallbackSource source = null) @safe nothrow @nogc
     {
         this.pipe = pipe;
         this.source = source;
@@ -239,17 +299,22 @@ struct BasicCallbackDispatcher(bool nogcHandlers)
 
     @disable this(this);
 
-    ~this() nothrow @nogc
+    ~this() @trusted nothrow @nogc
     {
-        callbacks.release();
-        callResults.release();
-        free(resultBuffer);
+        if (state is null)
+            return;
+        // A running dispatch frees the storage when it returns.
+        if (state.dispatching)
+            state.orphaned = true;
+        else
+            State.dispose(state);
+        state = null;
     }
 
     /// A dispatcher for the game's client pipe (`SteamAPI_GetHSteamPipe`).
     /// Create it after `steamInit`; before then (or with the library not
     /// loaded) its pipe is 0.
-    static BasicCallbackDispatcher forClient() nothrow @nogc
+    static BasicCallbackDispatcher forClient() @trusted nothrow @nogc
     {
         version (SteamworksDynamic)
             if (SteamAPI_GetHSteamPipe is null)
@@ -259,7 +324,7 @@ struct BasicCallbackDispatcher(bool nogcHandlers)
 
     /// A dispatcher for the game server pipe (`SteamGameServer_GetHSteamPipe`).
     /// Create it after `steamGameServerInit`.
-    static BasicCallbackDispatcher forGameServer() nothrow @nogc
+    static BasicCallbackDispatcher forGameServer() @trusted nothrow @nogc
     {
         version (SteamworksDynamic)
             if (SteamGameServer_GetHSteamPipe is null)
@@ -277,6 +342,12 @@ struct BasicCallbackDispatcher(bool nogcHandlers)
     /// ---
     /// Returns the token for `unregister`. A handler registered while a
     /// callback is being dispatched first runs for the next callback.
+    CallbackToken register(T)(SafeCallbackHandler!T handler) if (isSteamCallback!T)
+    {
+        return addCallback!(T, typeof(handler))(handler);
+    }
+
+    /// ditto
     CallbackToken register(T)(CallbackHandler!T handler) if (isSteamCallback!T)
     {
         return addCallback!(T, typeof(handler))(handler);
@@ -301,13 +372,25 @@ struct BasicCallbackDispatcher(bool nogcHandlers)
     /// every callback at all, receiving Steam's `CallbackMsg_t` as is
     /// (`m_pubParam` points to `m_cubParam` bytes of the callback struct).
     /// Useful for logging or for callbacks without a binding.
-    CallbackToken registerRaw(int callbackId, RawHandler handler)
+    CallbackToken registerRaw(int callbackId, SafeRawHandler handler) @safe nothrow @nogc
     {
-        return add(callbacks, callbackId, k_uAPICallInvalid, 0, handler.ptr, cast(void*) handler.funcptr, &rawThunk);
+        return add(false, callbackId, k_uAPICallInvalid, 0, contextOf(handler), fnOf(handler), &rawThunk);
     }
 
     /// ditto
-    CallbackToken registerRaw(RawHandler handler)
+    CallbackToken registerRaw(int callbackId, RawHandler handler) @system nothrow @nogc
+    {
+        return add(false, callbackId, k_uAPICallInvalid, 0, contextOf(handler), fnOf(handler), &rawThunk);
+    }
+
+    /// ditto
+    CallbackToken registerRaw(SafeRawHandler handler) @safe nothrow @nogc
+    {
+        return registerRaw(anyCallback, handler);
+    }
+
+    /// ditto
+    CallbackToken registerRaw(RawHandler handler) @system nothrow @nogc
     {
         return registerRaw(anyCallback, handler);
     }
@@ -316,9 +399,9 @@ struct BasicCallbackDispatcher(bool nogcHandlers)
     /// (never registered, already unregistered, or from another dispatcher).
     /// Safe to call from any handler, including the one being removed; a
     /// handler removed during dispatch is not called again.
-    bool unregister(CallbackToken token) nothrow @nogc
+    bool unregister(CallbackToken token) @safe nothrow @nogc
     {
-        return remove(callbacks, token.id);
+        return state !is null && state.remove(state.callbacks, token.id);
     }
 
     /// Waits for the result of asynchronous call `call`, which completes
@@ -332,6 +415,13 @@ struct BasicCallbackDispatcher(bool nogcHandlers)
     ///
     /// Several handlers may wait on the same call; the result is fetched once
     /// and passed to each.
+    CallResultToken callResult(T)(SteamAPICall_t call, SafeCallResultHandler!T handler)
+            if (isSteamCallback!T)
+    {
+        return addCallResult!(T, typeof(handler))(call, handler);
+    }
+
+    /// ditto
     CallResultToken callResult(T)(SteamAPICall_t call, CallResultHandler!T handler)
             if (isSteamCallback!T)
     {
@@ -385,6 +475,12 @@ struct BasicCallbackDispatcher(bool nogcHandlers)
         SteamAPICall_t handle;
 
         /// Registers the handler for the call's result, as `callResult` does.
+        CallResultToken then(SafeCallResultHandler!T handler)
+        {
+            return dispatcher.callResult!T(handle, handler);
+        }
+
+        /// ditto
         CallResultToken then(CallResultHandler!T handler)
         {
             return dispatcher.callResult!T(handle, handler);
@@ -400,35 +496,39 @@ struct BasicCallbackDispatcher(bool nogcHandlers)
     /// Stops waiting for a call result; its handler will not run. Returns
     /// false when the token is not pending (unknown, cancelled, or already
     /// delivered). Safe to call from any handler.
-    bool cancel(CallResultToken token) nothrow @nogc
+    bool cancel(CallResultToken token) @safe nothrow @nogc
     {
-        return remove(callResults, token.id);
+        return state !is null && state.remove(state.callResults, token.id);
     }
 
     /// Whether the call result is still waiting to be delivered.
-    bool isPending(CallResultToken token) const nothrow @nogc
+    bool isPending(CallResultToken token) const @safe nothrow @nogc
     {
-        return token.id && callResults.find(token.id) != size_t.max;
+        return token.id && state !is null && state.callResults.find(token.id) != size_t.max;
     }
 
     /// Number of registered callback handlers.
-    size_t handlerCount() const nothrow @nogc
+    size_t handlerCount() const @safe nothrow @nogc
     {
-        return callbacks.live();
+        return state is null ? 0 : state.callbacks.live();
     }
 
     /// Number of call results waiting to be delivered.
-    size_t pendingCallResultCount() const nothrow @nogc
+    size_t pendingCallResultCount() const @safe nothrow @nogc
     {
-        return callResults.live();
+        return state is null ? 0 : state.callResults.live();
     }
 
     /// Unregisters every handler and cancels every pending call result.
-    void clear() nothrow @nogc
+    /// Safe to call from any handler; handlers not yet called for the current
+    /// callback are skipped.
+    void clear() @safe nothrow @nogc
     {
-        callbacks.removeAll();
-        callResults.removeAll();
-        compactLater();
+        if (state is null)
+            return;
+        state.callbacks.removeAll();
+        state.callResults.removeAll();
+        state.compactLater();
     }
 
     /// Lets Steam do its per-frame work and delivers every queued callback
@@ -437,27 +537,26 @@ struct BasicCallbackDispatcher(bool nogcHandlers)
     /// from one of this dispatcher's handlers.
     void runFrame()
     {
-        if (dispatching || pipe == 0)
+        if (pipe == 0 || (state !is null && state.dispatching))
             return;
+        State* st = ensureState();
+        if (st is null)
+            return;
+        // Everything below uses locals: a handler may move, reassign or
+        // destroy the dispatcher, after which `this` is no longer this
+        // dispatch's.
+        const p = pipe;
         CallbackSource src = source ? source : manualDispatchSource();
-        dispatching = true;
+        st.dispatching = true;
         scope (exit)
-        {
-            dispatching = false;
-            if (needsCompaction)
-            {
-                needsCompaction = false;
-                callbacks.compact();
-                callResults.compact();
-            }
-        }
-        src.runFrame(pipe);
+            State.endDispatch(st);
+        src.runFrame(p);
         CallbackMsg_t msg;
-        while (src.nextCallback(pipe, msg))
+        while (!st.orphaned && src.nextCallback(p, msg))
         {
             scope (exit)
-                src.freeLastCallback(pipe);
-            deliver(src, msg);
+                src.freeLastCallback(p);
+            deliver(st, src, p, msg);
         }
     }
 
@@ -473,15 +572,115 @@ private:
         Thunk thunk;
     }
 
+    /// Handler storage and dispatch state, in `calloc` memory (all-zero is
+    /// the initial state).
+    static struct State
+    {
+        EntryList!Entry callbacks;
+        EntryList!Entry callResults;
+        ubyte* resultBuffer;
+        size_t resultBufferSize;
+        bool dispatching;
+        bool needsCompaction;
+        /// The owning dispatcher went away during dispatch.
+        bool orphaned;
+
+        static State* create() @trusted nothrow @nogc
+        {
+            return cast(State*) calloc(1, State.sizeof);
+        }
+
+        static void dispose(State* s) @trusted nothrow @nogc
+        {
+            s.callbacks.release();
+            s.callResults.release();
+            free(s.resultBuffer);
+            free(s);
+        }
+
+        static void endDispatch(State* s) @safe nothrow @nogc
+        {
+            s.dispatching = false;
+            if (s.orphaned)
+                dispose(s);
+            else if (s.needsCompaction)
+            {
+                s.needsCompaction = false;
+                s.callbacks.compact();
+                s.callResults.compact();
+            }
+        }
+
+        bool remove(ref EntryList!Entry list, ulong id) @safe nothrow @nogc
+        {
+            const i = id ? list.find(id) : size_t.max;
+            if (i == size_t.max)
+                return false;
+            list[i].token = 0;
+            compactLater();
+            return true;
+        }
+
+        void compactLater() @safe nothrow @nogc
+        {
+            if (dispatching)
+            {
+                needsCompaction = true;
+                return;
+            }
+            callbacks.compact();
+            callResults.compact();
+        }
+
+        bool reserveResultBuffer(size_t size) @trusted nothrow @nogc
+        {
+            if (size <= resultBufferSize)
+                return true;
+            auto p = cast(ubyte*) realloc(resultBuffer, size);
+            if (p is null)
+                return false;
+            resultBuffer = p;
+            resultBufferSize = size;
+            return true;
+        }
+
+        /// The first `size` bytes of the result buffer, zeroed.
+        ubyte[] clearedResult(size_t size) @trusted nothrow @nogc
+        {
+            memset(resultBuffer, 0, size);
+            return resultBuffer[0 .. size];
+        }
+    }
+
+    State* ensureState() @safe nothrow @nogc
+    {
+        if (state is null)
+            state = State.create();
+        return state;
+    }
+
+    static void* contextOf(D)(D dg) @trusted
+    {
+        return dg.ptr;
+    }
+
+    static void* fnOf(F)(F handler) @trusted
+    {
+        static if (isDelegate!F)
+            return cast(void*) handler.funcptr;
+        else
+            return cast(void*) handler;
+    }
+
     CallbackToken addCallback(T, F)(F handler)
     {
         checkHandler!F();
         static if (isDelegate!F)
-            return add(callbacks, T.k_iCallback, k_uAPICallInvalid, T.sizeof, handler.ptr,
-                    cast(void*) handler.funcptr, &callbackThunk!(T, F));
+            return add(false, T.k_iCallback, k_uAPICallInvalid, T.sizeof, contextOf(handler),
+                    fnOf(handler), &callbackThunk!(T, F));
         else
-            return add(callbacks, T.k_iCallback, k_uAPICallInvalid, T.sizeof, null,
-                    cast(void*) handler, &callbackThunk!(T, F));
+            return add(false, T.k_iCallback, k_uAPICallInvalid, T.sizeof, null, fnOf(handler),
+                    &callbackThunk!(T, F));
     }
 
     CallResultToken addCallResult(T, F)(SteamAPICall_t call, F handler)
@@ -490,14 +689,16 @@ private:
         if (call == k_uAPICallInvalid)
             return CallResultToken.init;
         static if (isDelegate!F)
-            const token = add(callResults, T.k_iCallback, call, T.sizeof, handler.ptr,
-                    cast(void*) handler.funcptr, &callResultThunk!(T, F));
+            const token = add(true, T.k_iCallback, call, T.sizeof, contextOf(handler),
+                    fnOf(handler), &callResultThunk!(T, F));
         else
-            const token = add(callResults, T.k_iCallback, call, T.sizeof, null,
-                    cast(void*) handler, &callResultThunk!(T, F));
+            const token = add(true, T.k_iCallback, call, T.sizeof, null, fnOf(handler), &callResultThunk!(T, F));
         return CallResultToken(token.id, token.id ? call : k_uAPICallInvalid);
     }
 
+    /// Checks the handler type; a handler that is not `@safe` or `@trusted`
+    /// makes the registering function `@system`, since `runFrame` calls it
+    /// from `@safe` code.
     static void checkHandler(F)()
     {
         static assert(isDelegate!F || isFunctionPointer!F,
@@ -506,68 +707,62 @@ private:
             static assert((functionAttributes!F & (FunctionAttribute.nothrow_ | FunctionAttribute.nogc)) == (
                     FunctionAttribute.nothrow_ | FunctionAttribute.nogc),
                     "NogcCallbackDispatcher handlers must be nothrow @nogc; got " ~ F.stringof);
+        static if (!(functionAttributes!F & (FunctionAttribute.safe | FunctionAttribute.trusted)))
+            registeringSystemHandler();
     }
 
-    CallbackToken add(ref EntryList!Entry list, int callbackId, SteamAPICall_t call, size_t resultSize,
-            void* context, void* fn, Thunk thunk) nothrow @nogc
+    static void registeringSystemHandler() @system pure nothrow @nogc
     {
+    }
+
+    CallbackToken add(bool isCallResult, int callbackId, SteamAPICall_t call, size_t resultSize,
+            void* context, void* fn, Thunk thunk) @safe nothrow @nogc
+    {
+        State* st = ensureState();
+        if (st is null)
+            return CallbackToken.init;
         const id = newTokenId();
+        auto list = isCallResult ? &st.callResults : &st.callbacks;
         if (!list.append(Entry(id, callbackId, call, resultSize, context, fn, thunk)))
             return CallbackToken.init;
         return CallbackToken(id);
     }
 
-    bool remove(ref EntryList!Entry list, ulong id) nothrow @nogc
+    static void deliver(State* st, CallbackSource src, HSteamPipe pipe, ref const CallbackMsg_t msg)
     {
-        const i = id ? list.find(id) : size_t.max;
-        if (i == size_t.max)
-            return false;
-        list[i].token = 0;
-        compactLater();
-        return true;
-    }
-
-    void compactLater() nothrow @nogc
-    {
-        if (dispatching)
-        {
-            needsCompaction = true;
-            return;
-        }
-        callbacks.compact();
-        callResults.compact();
-    }
-
-    void deliver(CallbackSource src, ref const CallbackMsg_t msg)
-    {
-        Exception pending;
+        Pending pending;
         if (msg.m_iCallback == SteamAPICallCompleted_t.k_iCallback && msg.m_pubParam !is null
                 && msg.m_cubParam >= SteamAPICallCompleted_t.sizeof)
-            deliverCallResult(src, *cast(const(SteamAPICallCompleted_t)*) msg.m_pubParam, msg, pending);
+            deliverCallResult(st, src, pipe, completion(msg), msg, pending);
 
         const size = msg.m_cubParam > 0 ? cast(size_t) msg.m_cubParam : 0;
         // Handlers registered from a handler wait for the next callback.
-        const n = callbacks.length;
+        const n = st.callbacks.length;
         foreach (i; 0 .. n)
         {
-            const e = callbacks[i];
+            if (st.orphaned)
+                break;
+            const e = st.callbacks[i];
             if (e.token && (e.callbackId == msg.m_iCallback || e.callbackId == anyCallback))
                 invoke(e, msg, msg.m_pubParam, size, false, pending);
         }
-        static if (!nogcHandlers)
-            if (pending)
-                throw pending;
+        pending.rethrow();
     }
 
-    void deliverCallResult(CallbackSource src, ref const SteamAPICallCompleted_t done,
-            ref const CallbackMsg_t msg, ref Exception pending)
+    static ref const(SteamAPICallCompleted_t) completion(ref const CallbackMsg_t msg) @trusted nothrow @nogc
+    {
+        return *cast(const(SteamAPICallCompleted_t)*) msg.m_pubParam;
+    }
+
+    static void deliverCallResult(State* st, CallbackSource src, HSteamPipe pipe,
+            ref const SteamAPICallCompleted_t done, ref const CallbackMsg_t msg, ref Pending pending)
     {
         const call = done.m_hAsyncCall;
         size_t needed = done.m_cubParam;
         bool claimed;
-        foreach (i; 0 .. callResults.length)
+        foreach (i; 0 .. st.callResults.length)
         {
-            const e = callResults[i];
+            const e = st.callResults[i];
             if (e.token && e.call == call)
             {
                 claimed = true;
@@ -581,54 +776,76 @@ private:
 
         bool failed;
         bool fetched;
-        if (reserveResultBuffer(needed))
+        const(void)* data;
+        if (st.reserveResultBuffer(needed))
         {
-            memset(resultBuffer, 0, needed);
-            fetched = src.apiCallResult(pipe, call, resultBuffer[0 .. done.m_cubParam], done.m_iCallback, failed);
+            auto buffer = st.clearedResult(needed);
+            data = &buffer[0];
+            fetched = src.apiCallResult(pipe, call, buffer[0 .. done.m_cubParam], done.m_iCallback, failed);
         }
-        const n = callResults.length;
+        const n = st.callResults.length;
         foreach (i; 0 .. n)
         {
-            if (!callResults[i].token || callResults[i].call != call)
+            if (st.orphaned)
+                break;
+            if (!st.callResults[i].token || st.callResults[i].call != call)
                 continue;
-            const e = callResults[i];
-            callResults[i].token = 0;
-            needsCompaction = true;
+            const e = st.callResults[i];
+            st.callResults[i].token = 0;
+            st.needsCompaction = true;
             const usable = fetched && e.callbackId == done.m_iCallback;
-            invoke(e, msg, usable ? resultBuffer : null, done.m_cubParam, !usable || failed, pending);
+            invoke(e, msg, usable ? data : null, done.m_cubParam, !usable || failed, pending);
         }
     }
 
-    bool reserveResultBuffer(size_t size) nothrow @nogc
+    /// Exceptions thrown by the handlers of one callback.
+    static struct Pending
     {
-        if (size <= resultBufferSize)
-            return true;
-        auto p = cast(ubyte*) realloc(resultBuffer, size);
-        if (p is null)
-            return false;
-        resultBuffer = p;
-        resultBufferSize = size;
-        return true;
+        static if (!nogcHandlers)
+        {
+            Exception[] exceptions;
+
+            void add(Exception ex) @safe nothrow
+            {
+                foreach (e; exceptions)
+                    if (e is ex)
+                        return;
+                exceptions ~= ex;
+            }
+
+            void rethrow() @safe
+            {
+                if (exceptions.length == 1)
+                    throw exceptions[0];
+                if (exceptions.length > 1)
+                    throw new CallbackHandlersException(exceptions);
+            }
+        }
+        else
+        {
+            void rethrow() @safe pure nothrow @nogc
+            {
+            }
+        }
     }
 
     static void invoke(ref const Entry e, ref const CallbackMsg_t msg, const(void)* data, size_t size,
-            bool failure, ref Exception pending)
+            bool failure, ref Pending pending)
     {
         static if (nogcHandlers)
-        {
-            cast(void) pending;
             e.thunk(e, msg, data, size, failure);
-        }
         else
         {
             try
                 e.thunk(e, msg, data, size, failure);
             catch (Exception ex)
-                pending = pending is null ? ex : cast(Exception) Throwable.chainTogether(pending, ex);
+                pending.add(ex);
         }
     }
 
-    static void callHandler(F, Args...)(ref const Entry e, ref Args args)
+    // The thunks call handlers of any safety from @safe code: a handler that
+    // is not @safe was registered from @system code (see checkHandler).
+    static void callHandler(F, Args...)(ref const Entry e, ref Args args) @trusted
     {
         static if (isDelegate!F)
         {
@@ -653,7 +870,7 @@ private:
         return &scratch;
     }
 
-    static void callbackThunk(T, F)(ref const Entry e, ref const CallbackMsg_t, const(void)* data, size_t size, bool)
+    static void callbackThunk(T, F)(ref const Entry e, ref const CallbackMsg_t, const(void)* data, size_t size, bool) @trusted
     {
         T scratch = void;
         auto p = view!T(data, size, scratch);
@@ -661,14 +878,14 @@ private:
     }
 
     static void callResultThunk(T, F)(ref const Entry e, ref const CallbackMsg_t, const(void)* data,
-            size_t size, bool failure)
+            size_t size, bool failure) @trusted
     {
         T scratch = void;
         auto p = view!T(data, size, scratch);
         callHandler!F(e, *p, failure);
     }
 
-    static void rawThunk(ref const Entry e, ref const CallbackMsg_t msg, const(void)*, size_t, bool)
+    static void rawThunk(ref const Entry e, ref const CallbackMsg_t msg, const(void)*, size_t, bool) @trusted
     {
         callHandler!RawHandler(e, msg);
     }
@@ -692,18 +909,18 @@ private struct EntryList(E)
 
     @disable this(this);
 
-    size_t length() const nothrow @nogc
+    size_t length() const @safe nothrow @nogc
     {
         return count;
     }
 
-    ref inout(E) opIndex(size_t i) inout nothrow @nogc
+    ref inout(E) opIndex(size_t i) inout @trusted nothrow @nogc
     {
         assert(i < count);
         return data[i];
     }
 
-    bool append(E e) nothrow @nogc
+    bool append(E e) @trusted nothrow @nogc
     {
         if (count == capacity)
         {
@@ -728,7 +945,7 @@ private struct EntryList(E)
         return true;
     }
 
-    size_t find(ulong token) const nothrow @nogc
+    size_t find(ulong token) const @trusted nothrow @nogc
     {
         foreach (i; 0 .. count)
             if (data[i].token == token)
@@ -736,7 +953,7 @@ private struct EntryList(E)
         return size_t.max;
     }
 
-    size_t live() const nothrow @nogc
+    size_t live() const @trusted nothrow @nogc
     {
         size_t n;
         foreach (i; 0 .. count)
@@ -745,13 +962,13 @@ private struct EntryList(E)
         return n;
     }
 
-    void removeAll() nothrow @nogc
+    void removeAll() @trusted nothrow @nogc
     {
         foreach (i; 0 .. count)
             data[i].token = 0;
     }
 
-    void compact() nothrow @nogc
+    void compact() @trusted nothrow @nogc
     {
         size_t kept;
         foreach (i; 0 .. count)
@@ -762,7 +979,7 @@ private struct EntryList(E)
         count = kept;
     }
 
-    void release() nothrow @nogc
+    void release() @trusted nothrow @nogc
     {
         if (data is null)
             return;
@@ -828,14 +1045,14 @@ version (unittest)
             push(done);
         }
 
-        override void runFrame(HSteamPipe pipe) nothrow @nogc
+        override void runFrame(HSteamPipe pipe) @safe nothrow @nogc
         {
             ++frames;
             if (pipeCount < pipeLog.length)
                 pipeLog[pipeCount++] = pipe;
         }
 
-        override bool nextCallback(HSteamPipe, out CallbackMsg_t msg) nothrow @nogc
+        override bool nextCallback(HSteamPipe, out CallbackMsg_t msg) @safe nothrow @nogc
         {
             assert(!outstanding, "next callback fetched before the last was freed");
             ++gets;
@@ -846,14 +1063,14 @@ version (unittest)
             return true;
         }
 
-        override void freeLastCallback(HSteamPipe) nothrow @nogc
+        override void freeLastCallback(HSteamPipe) @safe nothrow @nogc
         {
             assert(outstanding, "freed a callback that was not fetched");
             outstanding = false;
             ++frees;
         }
 
-        override bool apiCallResult(HSteamPipe, SteamAPICall_t call, void[] buffer, int expected, out bool failed) nothrow @nogc
+        override bool apiCallResult(HSteamPipe, SteamAPICall_t call, void[] buffer, int expected, out bool failed) @trusted nothrow @nogc
         {
             ++fetches;
             lastExpected = expected;
@@ -1304,7 +1521,8 @@ unittest
     assert(seen == [1, 2] && src.drained);
 }
 
-/// Exceptions from several handlers are chained.
+/// Exceptions from several handlers are collected in a
+/// CallbackHandlersException, in the order they were thrown.
 unittest
 {
     import std.exception : collectException;
@@ -1314,8 +1532,21 @@ unittest
     d.register!PersonaStateChange_t((ref e) { throw new Exception("a"); });
     d.register!PersonaStateChange_t((ref e) { throw new Exception("b"); });
     src.push(persona(1));
-    const ex = collectException(d.runFrame());
-    assert(ex.msg == "a" && ex.next !is null && ex.next.msg == "b");
+    auto ex = cast(CallbackHandlersException) collectException(d.runFrame());
+    assert(ex !is null && ex.next is null);
+    assert(ex.exceptions.length == 2 && ex.exceptions[0].msg == "a" && ex.exceptions[1].msg == "b");
+    assert(ex.exceptions[0].next is null);
+}
+
+/// A CallbackHandlersException describes every exception it holds.
+unittest
+{
+    import std.algorithm : canFind;
+
+    auto ex = new CallbackHandlersException([new Exception("first"), new Exception("second")]);
+    const text = ex.toString();
+    assert(ex.msg.canFind("2") && ex.msg.canFind("first"));
+    assert(text.canFind("first") && text.canFind("second"));
 }
 
 /// A throwing call result handler is still removed after it runs.
@@ -1371,6 +1602,166 @@ unittest
     src.complete(40, board(1));
     d.runFrame();
     assert(!called);
+}
+
+/// A handler can reset the dispatcher it runs in: the handlers after it and
+/// the rest of the queue are skipped, and the callback is still freed.
+unittest
+{
+    auto src = new FakeSource;
+    auto d = CallbackDispatcher(1, src);
+    int later;
+    d.register!PersonaStateChange_t((ref e) { d = CallbackDispatcher.init; });
+    foreach (i; 0 .. 3)
+        d.register!PersonaStateChange_t((ref e) { ++later; });
+    src.push(persona(1));
+    src.push(persona(2));
+    d.runFrame();
+    assert(later == 0 && !src.outstanding && src.frees == 1);
+    assert(d.handlerCount == 0 && d.pipe == 0);
+}
+
+/// A handler can destroy the dispatcher it runs in, from a call result too.
+unittest
+{
+    auto src = new FakeSource;
+    auto d = CallbackDispatcher(1, src);
+    int later;
+    d.callResult!LeaderboardFindResult_t(70, (ref r, io) { destroy(d); });
+    d.callResult!LeaderboardFindResult_t(70, (ref r, io) { ++later; });
+    d.register!SteamAPICallCompleted_t((ref e) { ++later; });
+    src.complete(70, board(1));
+    d.runFrame();
+    assert(later == 0 && !src.outstanding && src.frees == 1);
+}
+
+/// A handler can replace the dispatcher; the replacement takes over the
+/// queue on its first runFrame.
+unittest
+{
+    auto src = new FakeSource;
+    auto d = CallbackDispatcher(1, src);
+    ulong[] seen;
+    d.register!PersonaStateChange_t((ref e) {
+        d = CallbackDispatcher(1, src);
+        d.register!PersonaStateChange_t((ref e2) { seen ~= e2.m_ulSteamID; });
+    });
+    src.push(persona(1));
+    src.push(persona(2));
+    d.runFrame();
+    assert(seen.length == 0 && d.handlerCount == 1);
+    d.runFrame();
+    assert(seen == [2] && src.drained);
+}
+
+/// A dispatcher moved by one of its handlers keeps dispatching.
+unittest
+{
+    import core.lifetime : move;
+
+    auto src = new FakeSource;
+    auto a = CallbackDispatcher(1, src);
+    CallbackDispatcher b;
+    int calls;
+    a.register!PersonaStateChange_t((ref e) {
+        if (b.pipe == 0)
+            b = move(a);
+    });
+    a.register!PersonaStateChange_t((ref e) { ++calls; });
+    src.push(persona(1));
+    src.push(persona(2));
+    a.runFrame();
+    assert(calls == 2 && src.drained && b.handlerCount == 2);
+    src.push(persona(3));
+    b.runFrame();
+    assert(calls == 3);
+}
+
+/// An exception instance thrown by several handlers propagates once and
+/// unchanged; the dispatcher never links exceptions through `next`.
+unittest
+{
+    import std.exception : collectException;
+
+    auto src = new FakeSource;
+    auto d = CallbackDispatcher(1, src);
+    auto cached = new Exception("cached");
+    d.register!PersonaStateChange_t((ref e) { throw cached; });
+    d.register!PersonaStateChange_t((ref e) { throw cached; });
+    src.push(persona(1));
+    const ex = collectException(d.runFrame());
+    assert(ex is cached && cached.next is null);
+}
+
+/// Exceptions thrown in different orders on different frames stay unlinked.
+unittest
+{
+    import std.exception : collectException;
+
+    auto src = new FakeSource;
+    auto d = CallbackDispatcher(1, src);
+    auto a = new Exception("a"), b = new Exception("b");
+    d.register!PersonaStateChange_t((ref e) { throw e.m_ulSteamID == 1 ? a : b; });
+    d.register!PersonaStateChange_t((ref e) { throw e.m_ulSteamID == 1 ? b : a; });
+    src.push(persona(1));
+    src.push(persona(2));
+    assert(collectException(d.runFrame()) !is null);
+    assert(collectException(d.runFrame()) !is null);
+    assert(a.next is null && b.next is null);
+}
+
+/// The whole dispatcher is usable from @safe code with @safe handlers.
+unittest
+{
+    static void frame(ref CallbackDispatcher d, ref NogcCallbackDispatcher n, ref int calls) @safe
+    {
+        auto t = d.register!PersonaStateChange_t((ref e) { ++calls; });
+        d.register((ref const GameOverlayActivated_t e) { ++calls; });
+        d.registerRaw((ref const CallbackMsg_t m) { ++calls; });
+        auto r = d.callResult!LeaderboardFindResult_t(80, (ref r, io) { ++calls; });
+        d.callResult(81, (ref const NumberOfCurrentPlayers_t r, bool io) { ++calls; });
+        d.runFrame();
+        d.cancel(r);
+        d.unregister(t);
+        n.register!PersonaStateChange_t((ref e) nothrow @nogc {});
+        n.runFrame();
+        d.clear();
+        cast(void) manualDispatchSource();
+    }
+
+    static assert(__traits(compiles, () @safe {
+            auto client = CallbackDispatcher.forClient();
+            auto server = NogcCallbackDispatcher.forGameServer();
+        }));
+
+    auto src = new FakeSource;
+    auto d = CallbackDispatcher(1, src);
+    auto n = NogcCallbackDispatcher(1, new FakeSource);
+    int calls;
+    src.push(persona(1));
+    frame(d, n, calls);
+    assert(calls == 2);
+}
+
+/// Registering a @system handler is itself @system.
+unittest
+{
+    static void unsafe(ref const PersonaStateChange_t) @system
+    {
+    }
+
+    CallbackDispatcher d;
+    static assert(!__traits(compiles, () @safe { d.register(&unsafe); }));
+    static assert(!__traits(compiles, () @safe {
+            d.register!PersonaStateChange_t((ref e) { int* p; p++; });
+        }));
+    static assert(!__traits(compiles, () @safe {
+            d.registerRaw((ref const CallbackMsg_t m) { int* p; p++; });
+        }));
+    static assert(!__traits(compiles, () @safe {
+            d.callResult!LeaderboardFindResult_t(1, (ref r, io) { int* p; p++; });
+        }));
+    static assert(__traits(compiles, () @system { d.register(&unsafe); }));
 }
 
 /// call!fn derives the result type from the function's attribute.

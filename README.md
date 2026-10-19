@@ -213,16 +213,24 @@ each). Call `runFrame()` once per frame.
   function; the handler gets `(ref const T result, bool ioFailure)` once. `call!fn(args).then(...)`
   makes the call and takes `T` from the function's `SteamCallResult` attribute. `cancel` stops
   waiting; an invalid handle registers nothing.
-- Handlers may register, unregister and cancel (themselves included) while running.
-  `runFrame` never allocates from the GC; handlers live in `malloc` memory scanned by the GC.
+- Handlers may register, unregister, cancel and `clear` (themselves included) while running.
+  A handler may also reset, reassign or destroy the dispatcher (`steam = CallbackDispatcher.init;`
+  on `SteamShutdown_t`): the remaining handlers are skipped, the callback is still freed, and
+  queued callbacks wait for the next `runFrame`. `runFrame` never allocates from the GC; handlers
+  live in `malloc` memory scanned by the GC.
 - `CallbackDispatcher` accepts any handler: if one throws, the others for the same callback
-  still run, the callback is freed, and the exception (chained with any others) leaves
-  `runFrame`; queued callbacks wait for the next frame. `NogcCallbackDispatcher` accepts only
-  `nothrow @nogc` handlers, which makes `runFrame` `nothrow @nogc`.
+  still run, the callback is freed, and the exception leaves `runFrame` unchanged (several
+  distinct exceptions arrive together in a `CallbackHandlersException`; the dispatcher never
+  touches an exception's `next`); queued callbacks wait for the next frame.
+  `NogcCallbackDispatcher` accepts only `nothrow @nogc` handlers, which makes `runFrame`
+  `nothrow @nogc`.
+- With `@safe` handlers, registering, `runFrame` and the rest are `@safe`; registering a
+  `@system` handler is `@system`.
 - The dispatcher is single-threaded and not copyable; `call!fn(...).then` keeps a pointer to it,
   so keep it in one place (a local in the main loop, a field of a class).
-- The dispatcher reads from a `CallbackSource` interface, Steam's manual dispatch by default;
-  tests inject synthetic callbacks and call results through it.
+- The dispatcher reads from a `CallbackSource` interface (`@safe` methods; implement them as
+  `@trusted` where needed), Steam's manual dispatch by default; tests inject synthetic
+  callbacks and call results through it.
 
 ### Other conveniences
 
