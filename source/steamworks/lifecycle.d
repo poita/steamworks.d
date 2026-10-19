@@ -30,8 +30,9 @@ import steamworks.strings : fromCString, tempCString;
 /// How callbacks and call results reach the application.
 enum SteamDispatchMode
 {
-    /// `SteamAPI_ManualDispatch_Init` is called before initializing, and the
-    /// application pumps callbacks itself, normally with a
+    /// `SteamAPI_ManualDispatch_Init` is called once initialization succeeds
+    /// (steam_api.h requires it after `SteamAPI_Init`), and the application
+    /// pumps callbacks itself, normally with a
     /// `steamworks.dispatch.CallbackDispatcher`.
     manual,
     /// Steam's own dispatch (`SteamAPI_RunCallbacks` with registered
@@ -107,7 +108,7 @@ private void selectDispatch(SteamDispatchMode mode) nothrow @nogc
 /// Initializes the Steam API for the running game (`SteamAPI_InitEx`),
 /// checking that the user's Steam client supports every interface version
 /// these bindings call. With `SteamDispatchMode.manual` (the default),
-/// manual callback dispatch is selected first.
+/// manual callback dispatch is selected once initialization succeeds.
 ///
 /// With the "dynamic" configuration, a library that `loadSteamworks` has not
 /// loaded gives `k_ESteamAPIInitResult_FailedGeneric` and an explanatory
@@ -119,9 +120,10 @@ SteamInitResult steamInit(SteamDispatchMode mode = SteamDispatchMode.manual) not
         if (SteamInternal_SteamAPI_Init is null || SteamAPI_ManualDispatch_Init is null)
             return SteamInitResult.failure(ESteamAPIInitResult.k_ESteamAPIInitResult_FailedGeneric, notLoaded);
     }
-    selectDispatch(mode);
     SteamInitResult r;
     r.result = SteamAPI_InitEx(&r.errMsg);
+    if (r)
+        selectDispatch(mode);
     return r;
 }
 
@@ -142,6 +144,7 @@ void steamShutdown() nothrow @nogc
         if (SteamAPI_Shutdown is null)
             return;
     SteamAPI_Shutdown();
+    manualDispatchEnabled = false;
 }
 
 /// Asks Steam to relaunch the game if it was started outside Steam
@@ -178,9 +181,10 @@ SteamInitResult steamGameServerInit(uint ip, ushort gamePort, ushort queryPort, 
     auto ver = tempCString(versionString);
     if (ver.ptr is null)
         return SteamInitResult.failure(ESteamAPIInitResult.k_ESteamAPIInitResult_FailedGeneric, "out of memory");
-    selectDispatch(mode);
     SteamInitResult r;
     r.result = SteamGameServer_InitEx(ip, gamePort, queryPort, serverMode, ver.ptr, &r.errMsg);
+    if (r)
+        selectDispatch(mode);
     return r;
 }
 
@@ -201,6 +205,7 @@ void steamGameServerShutdown() nothrow @nogc
         if (SteamGameServer_Shutdown is null)
             return;
     SteamGameServer_Shutdown();
+    manualDispatchEnabled = false;
 }
 
 unittest
@@ -254,4 +259,109 @@ version (SteamworksDynamic) unittest
         return;
     assertThrown!SteamInitException(steamInitOrThrow());
     assertThrown!SteamInitException(steamGameServerInitOrThrow(0, 1, 2, EServerMode.eServerModeNoAuthentication, "1"));
+}
+
+version (SteamworksDynamic) version (unittest)
+{
+    private __gshared char[128] callLog;
+    private __gshared size_t callLogLength;
+    private __gshared ESteamAPIInitResult fakeInitResult;
+
+    private void logCall(string call) nothrow @nogc
+    {
+        callLog[callLogLength .. callLogLength + call.length] = call[];
+        callLogLength += call.length;
+    }
+
+    private const(char)[] lifecycleCalls() nothrow @nogc
+    {
+        return callLog[0 .. callLogLength];
+    }
+
+    private extern (C) ESteamAPIInitResult fakeClientInit(const(char)*, SteamErrMsg* err) nothrow @nogc
+    {
+        logCall("init;");
+        if (fakeInitResult != ESteamAPIInitResult.k_ESteamAPIInitResult_OK)
+            (*err)[0 .. 4] = "nope";
+        return fakeInitResult;
+    }
+
+    private extern (C) ESteamAPIInitResult fakeServerInit(uint, ushort, ushort, EServerMode,
+            const(char)* ver, const(char)*, SteamErrMsg*) nothrow @nogc
+    {
+        logCall(fromCString(ver) == "1.2.3.4" ? "server;" : "server(bad version);");
+        return fakeInitResult;
+    }
+
+    private extern (C) void fakeManualDispatchInit() nothrow @nogc
+    {
+        logCall("manual;");
+    }
+
+    /// Points the init functions at fakes for the duration of a test.
+    private struct FakeLifecycle
+    {
+        @disable this(this);
+
+        static FakeLifecycle install(ESteamAPIInitResult result)
+        {
+            callLogLength = 0;
+            fakeInitResult = result;
+            manualDispatchEnabled = false;
+            SteamInternal_SteamAPI_Init = &fakeClientInit;
+            SteamInternal_GameServer_Init_V2 = &fakeServerInit;
+            SteamAPI_ManualDispatch_Init = &fakeManualDispatchInit;
+            return FakeLifecycle.init;
+        }
+
+        ~this()
+        {
+            SteamInternal_SteamAPI_Init = null;
+            SteamInternal_GameServer_Init_V2 = null;
+            SteamAPI_ManualDispatch_Init = null;
+            manualDispatchEnabled = false;
+        }
+    }
+}
+
+/// Manual dispatch is selected after a successful initialization, as
+/// steam_api.h requires, and only once per process.
+version (SteamworksDynamic) unittest
+{
+    import steamworks.loader : isSteamworksLoaded;
+
+    if (isSteamworksLoaded())
+        return;
+    auto fake = FakeLifecycle.install(ESteamAPIInitResult.k_ESteamAPIInitResult_OK);
+    assert(steamInit());
+    assert(lifecycleCalls == "init;manual;", lifecycleCalls);
+    assert(steamGameServerInit(0, 1, 2, EServerMode.eServerModeNoAuthentication, "1.2.3.4"));
+    assert(lifecycleCalls == "init;manual;server;", lifecycleCalls);
+}
+
+/// A failed initialization leaves the dispatch mode alone.
+version (SteamworksDynamic) unittest
+{
+    import steamworks.loader : isSteamworksLoaded;
+
+    if (isSteamworksLoaded())
+        return;
+    auto fake = FakeLifecycle.install(ESteamAPIInitResult.k_ESteamAPIInitResult_NoSteamClient);
+    const r = steamInit();
+    assert(r.result == ESteamAPIInitResult.k_ESteamAPIInitResult_NoSteamClient && r.message == "nope");
+    assert(lifecycleCalls == "init;", lifecycleCalls);
+}
+
+/// Automatic dispatch never selects manual dispatch.
+version (SteamworksDynamic) unittest
+{
+    import steamworks.loader : isSteamworksLoaded;
+
+    if (isSteamworksLoaded())
+        return;
+    auto fake = FakeLifecycle.install(ESteamAPIInitResult.k_ESteamAPIInitResult_OK);
+    assert(steamInit(SteamDispatchMode.automatic));
+    assert(steamGameServerInit(0, 1, 2, EServerMode.eServerModeNoAuthentication, "1.2.3.4",
+            SteamDispatchMode.automatic));
+    assert(lifecycleCalls == "init;server;", lifecycleCalls);
 }

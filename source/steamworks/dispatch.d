@@ -4,8 +4,8 @@
 /// `SteamAPI_ManualDispatch_RunFrame`, drains the pipe's queued callbacks,
 /// hands each to the handlers registered for its struct type, and fetches the
 /// results of completed asynchronous calls (`SteamAPICall_t`) for the
-/// handlers waiting on them. Select manual dispatch before initializing
-/// (`steamInit` does so by default).
+/// handlers waiting on them. Manual dispatch must be selected, which
+/// `steamInit` and `steamGameServerInit` do by default.
 ///
 /// ---
 /// steamInitOrThrow();
