@@ -41,6 +41,30 @@ ulong toUint64(const CSteamID id) @safe pure nothrow @nogc
     return id.ConvertToUint64();
 }
 
+/// The instance a Steam ID text with type letter `letter` and no instance
+/// stands for: the one `CSteamID.Set` gives the type (0 for clans and game
+/// servers, `k_unSteamUserDefaultInstance` otherwise), the chat flag the
+/// letter names for chats, and 0 for the nil ID's 'I'.
+private uint impliedInstance(char letter) @safe pure nothrow @nogc
+{
+    switch (letter)
+    {
+    case 'U':
+    case 'M':
+    case 'A':
+    case 'P':
+    case 'C':
+    case 'a':
+        return k_unSteamUserDefaultInstance;
+    case 'c':
+        return EChatSteamIDInstanceFlags.k_EChatInstanceFlagClan;
+    case 'L':
+        return EChatSteamIDInstanceFlags.k_EChatInstanceFlagLobby;
+    default:
+        return 0;
+    }
+}
+
 /// Characters `formatSteamID` may write, enough for any Steam ID.
 enum size_t steamIDMaxLength = 32;
 
@@ -48,8 +72,10 @@ enum size_t steamIDMaxLength = 32;
 /// returns the written part: a letter for the account type, the universe, the
 /// account ID and, where it is significant, the instance. For example
 /// "[U:1:22202]" (an individual), "[g:1:4]" (a clan), "[L:1:123]" (a lobby)
-/// or "[A:1:5:7]" (an anonymous game server). `buffer` should hold at least `steamIDMaxLength` characters;
-/// the output is truncated to fit otherwise.
+/// or "[A:1:5:7]" (an anonymous game server). Where Steam would leave out an
+/// instance other than the one the type implies, it is written, so that
+/// `parseSteamID` always gives back `id`. `buffer` should hold at least
+/// `steamIDMaxLength` characters; the output is truncated to fit otherwise.
 char[] formatSteamID(const CSteamID id, return scope char[] buffer) @safe pure nothrow @nogc
 {
     size_t n;
@@ -75,6 +101,7 @@ char[] formatSteamID(const CSteamID id, return scope char[] buffer) @safe pure n
 
     const instance = id.GetUnAccountInstance();
     char letter;
+    // Steam always renders the instance of these two types.
     bool withInstance;
     switch (id.GetEAccountType()) with (EAccountType)
     {
@@ -83,7 +110,6 @@ char[] formatSteamID(const CSteamID id, return scope char[] buffer) @safe pure n
         break;
     case k_EAccountTypeIndividual:
         letter = 'U';
-        withInstance = instance != k_unSteamUserDefaultInstance;
         break;
     case k_EAccountTypeMultiseat:
         letter = 'M';
@@ -120,6 +146,10 @@ char[] formatSteamID(const CSteamID id, return scope char[] buffer) @safe pure n
         letter = 'i';
         break;
     }
+    // Steam leaves out an instance the letter implies; one that differs is
+    // kept so that the text parses back to the same ID.
+    if (instance != impliedInstance(letter))
+        withInstance = true;
     put('[');
     put(letter);
     put(':');
@@ -159,8 +189,10 @@ string toSteam2String(const CSteamID id) @safe pure nothrow
 /// Parses a Steam ID written as a decimal 64-bit number ("76561197960287930"),
 /// in Steam's rendered form with or without brackets ("[U:1:22202]",
 /// "[A:1:5:7]", "U:1:22202"), or in the legacy "STEAM_X:Y:Z" form (where
-/// universe 0 means public). Returns whether `text` was valid; `id` is
-/// `k_steamIDNil` otherwise.
+/// universe 0 means public). Without an instance, the ID gets the one
+/// `CSteamID.Set` assigns its type (0 for clans and game servers, 1 for most
+/// others) or the chat flag of 'c' and 'L'; "[I:0:0]" is `k_steamIDNil`.
+/// Returns whether `text` was valid; `id` is `k_steamIDNil` otherwise.
 bool parseSteamID(scope const(char)[] text, out CSteamID id) @safe pure nothrow @nogc
 {
     static bool number(ref scope const(char)[] s, out ulong v, ulong max)
@@ -226,7 +258,6 @@ bool parseSteamID(scope const(char)[] text, out CSteamID id) @safe pure nothrow 
         return false;
 
     EAccountType type;
-    uint instance;
     switch (letter)
     {
     case 'I':
@@ -234,7 +265,6 @@ bool parseSteamID(scope const(char)[] text, out CSteamID id) @safe pure nothrow 
         break;
     case 'U':
         type = EAccountType.k_EAccountTypeIndividual;
-        instance = k_unSteamUserDefaultInstance;
         break;
     case 'M':
         type = EAccountType.k_EAccountTypeMultiseat;
@@ -258,12 +288,8 @@ bool parseSteamID(scope const(char)[] text, out CSteamID id) @safe pure nothrow 
         type = EAccountType.k_EAccountTypeChat;
         break;
     case 'c':
-        type = EAccountType.k_EAccountTypeChat;
-        instance = EChatSteamIDInstanceFlags.k_EChatInstanceFlagClan;
-        break;
     case 'L':
         type = EAccountType.k_EAccountTypeChat;
-        instance = EChatSteamIDInstanceFlags.k_EChatInstanceFlagLobby;
         break;
     case 'a':
         type = EAccountType.k_EAccountTypeAnonUser;
@@ -271,8 +297,7 @@ bool parseSteamID(scope const(char)[] text, out CSteamID id) @safe pure nothrow 
     default:
         return false;
     }
-    if (hasInstance)
-        instance = cast(uint) c;
+    const instance = hasInstance ? cast(uint) c : impliedInstance(letter);
     id = CSteamID(cast(uint) b, instance, cast(EUniverse) a, type);
     return true;
 }
@@ -357,6 +382,12 @@ unittest
                 EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeChat),
         CSteamID(9, EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeGameServer),
         CSteamID(3, 4, EUniverse.k_EUniverseDev, EAccountType.k_EAccountTypeMultiseat),
+        // The types Steam renders without an instance, with the instance
+        // CSteamID.Set gives them, and the nil ID.
+        CSteamID(5, EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeContentServer),
+        CSteamID(5, EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypePending),
+        CSteamID(5, EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeAnonUser),
+        CSteamID(5, EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeInvalid), CSteamID.init,
     ];
     foreach (expected; ids)
     {
@@ -364,6 +395,43 @@ unittest
         assert(parseSteamID(expected.toSteam3String, parsed), expected.toSteam3String);
         assert(parsed == expected, expected.toSteam3String);
     }
+}
+
+unittest
+{
+    // An instance other than the one the text implies is kept, so the text
+    // still parses back to the same ID.
+    const ids = [
+        CSteamID(5, 0, EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeContentServer),
+        CSteamID(5, 3, EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeAnonUser),
+        CSteamID(5, 1, EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeGameServer),
+        CSteamID(5, 2, EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeClan),
+        CSteamID(5, 2, EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeInvalid),
+        CSteamID(7,
+                EChatSteamIDInstanceFlags.k_EChatInstanceFlagLobby | EChatSteamIDInstanceFlags.k_EChatInstanceFlagMMSLobby,
+                EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeChat),
+    ];
+    foreach (expected; ids)
+    {
+        CSteamID parsed;
+        assert(parseSteamID(expected.toSteam3String, parsed), expected.toSteam3String);
+        assert(parsed == expected, expected.toSteam3String);
+    }
+}
+
+unittest
+{
+    // Text without an instance gets the one CSteamID.Set assigns.
+    CSteamID id;
+    assert(parseSteamID("[C:1:5]", id) && id.accountInstance == k_unSteamUserDefaultInstance);
+    assert(parseSteamID("[P:1:5]", id) && id.accountInstance == k_unSteamUserDefaultInstance);
+    assert(parseSteamID("[a:1:5]", id) && id.accountInstance == k_unSteamUserDefaultInstance);
+    assert(parseSteamID("[G:1:5]", id) && id.accountInstance == 0);
+    assert(parseSteamID("[g:1:5]", id) && id.accountInstance == 0);
+    // Steam's renderings of these stay unchanged.
+    assert(CSteamID(5, EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeContentServer)
+            .toSteam3String == "[C:1:5]");
+    assert(CSteamID(5, EUniverse.k_EUniversePublic, EAccountType.k_EAccountTypeAnonUser).toSteam3String == "[a:1:5]");
 }
 
 unittest
