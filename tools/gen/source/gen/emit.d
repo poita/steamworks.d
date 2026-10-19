@@ -491,8 +491,9 @@ string emitInterfaces(const ref Model m, string sdk)
             c.open();
             foreach (ref f; i.methods)
             {
+                // The virtual functions receive the object as `this`.
                 string[] ps;
-                foreach (ref p; f.params)
+                foreach (ref p; f.params[1 .. $])
                     ps ~= ctx.d(p.type, Use.param) ~ " " ~ dIdent(p.name);
                 c.line("/// " ~ i.name ~ "::" ~ f.method ~ ".");
                 c.line(format!"abstract %s %s(%s) nothrow;"(ctx.d(f.ret), f.method, ps.join(", ")));
@@ -800,4 +801,52 @@ unittest
     assert(moduleOf(f) == "steam_api");
     f.header = "isteamuser.h";
     assert(moduleOf(f) == "isteamuser");
+}
+
+unittest
+{
+    import std.algorithm : canFind;
+
+    auto m = buildModel(fixtureApi, fixtureOverrides, fixtureHeaders);
+    auto o = generate(m, "test");
+    const fns = o["source/steamworks/raw/isteamx.d"];
+    // Linked declaration with its call-result UDA and explicit self.
+    assert(fns.canFind("@SteamCallResult!(Cb_t)() SteamAPICall_t SteamAPI_ISteamX_Find(ISteamX* self, uint64_steamid id);"));
+    // Dynamic pointer type and variable.
+    assert(fns.canFind("alias PFN_SteamAPI_ISteamX_Find = SteamAPICall_t function(ISteamX* self, uint64_steamid id);"));
+    assert(fns.canFind("PFN_SteamAPI_ISteamX_Find SteamAPI_ISteamX_Find;"));
+    // Unversioned accessor forwarding to the exported one.
+    assert(fns.canFind("ISteamX* SteamAPI_SteamX() nothrow @nogc"));
+    assert(fns.canFind("return SteamAPI_SteamX_v001();"));
+}
+
+unittest
+{
+    import std.algorithm : canFind;
+
+    auto m = buildModel(fixtureApi, fixtureOverrides, fixtureHeaders);
+    auto o = generate(m, "test");
+    const cbs = o["source/steamworks/raw/callbacks.d"];
+    assert(cbs.canFind("enum int k_iCallback = 101;"));
+    assert(cbs.canFind("align(callbackAlign!(CSteamID)) CSteamID m_id;"));
+    const enums = o["source/steamworks/raw/enums.d"];
+    assert(enums.canFind("enum EPlat : uint"));
+    assert(enums.canFind("k_EPlatAll = 4294967295,"));
+    assert(enums.canFind("enum k_EPlatAll = EPlat.k_EPlatAll;"));
+    const syms = o["source/steamworks/raw/symbols.d"];
+    assert(syms.canFind("enum size_t steamworksFunctionCount = 4;"));
+    assert(syms.canFind(`missing += !resolve(cast(void**) &SteamAPI_RunCallbacks, "SteamAPI_RunCallbacks");`));
+}
+
+unittest
+{
+    import std.algorithm : canFind;
+
+    auto m = buildModel(fixtureApi, fixtureOverrides, fixtureHeaders);
+    auto o = generate(m, "test");
+    // Every generated module carries the do-not-edit banner.
+    foreach (path, text; o)
+        assert(text.startsWith(banner("test")), path);
+    assert(o["source/steamworks/raw/types.d"].canFind("alias intp = ptrdiff_t;"));
+    assert(o["source/steamworks/raw/consts.d"].canFind("enum uint32 k_uX = 0x1;"));
 }

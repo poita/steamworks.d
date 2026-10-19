@@ -116,13 +116,11 @@ struct ISteamMatchmaking;
 extern (C++) abstract class ISteamMatchmakingServerListResponse
 {
     /// ISteamMatchmakingServerListResponse::ServerResponded.
-    abstract void ServerResponded(ISteamMatchmakingServerListResponse self, HServerListRequest hRequest, int iServer) nothrow;
+    abstract void ServerResponded(HServerListRequest hRequest, int iServer) nothrow;
     /// ISteamMatchmakingServerListResponse::ServerFailedToRespond.
-    abstract void ServerFailedToRespond(ISteamMatchmakingServerListResponse self,
-            HServerListRequest hRequest, int iServer) nothrow;
+    abstract void ServerFailedToRespond(HServerListRequest hRequest, int iServer) nothrow;
     /// ISteamMatchmakingServerListResponse::RefreshComplete.
-    abstract void RefreshComplete(ISteamMatchmakingServerListResponse self,
-            HServerListRequest hRequest, EMatchMakingServerResponse response) nothrow;
+    abstract void RefreshComplete(HServerListRequest hRequest, EMatchMakingServerResponse response) nothrow;
 }
 
 /// C++ callback interface ISteamMatchmakingPingResponse (isteammatchmaking.h), implemented by the application.
@@ -133,9 +131,9 @@ extern (C++) abstract class ISteamMatchmakingServerListResponse
 extern (C++) abstract class ISteamMatchmakingPingResponse
 {
     /// ISteamMatchmakingPingResponse::ServerResponded.
-    abstract void ServerResponded(ISteamMatchmakingPingResponse self, ref gameserveritem_t server) nothrow;
+    abstract void ServerResponded(ref gameserveritem_t server) nothrow;
     /// ISteamMatchmakingPingResponse::ServerFailedToRespond.
-    abstract void ServerFailedToRespond(ISteamMatchmakingPingResponse self) nothrow;
+    abstract void ServerFailedToRespond() nothrow;
 }
 
 /// C++ callback interface ISteamMatchmakingPlayersResponse (isteammatchmaking.h), implemented by the application.
@@ -146,12 +144,11 @@ extern (C++) abstract class ISteamMatchmakingPingResponse
 extern (C++) abstract class ISteamMatchmakingPlayersResponse
 {
     /// ISteamMatchmakingPlayersResponse::AddPlayerToList.
-    abstract void AddPlayerToList(ISteamMatchmakingPlayersResponse self, const(char)* pchName,
-            int nScore, float flTimePlayed) nothrow;
+    abstract void AddPlayerToList(const(char)* pchName, int nScore, float flTimePlayed) nothrow;
     /// ISteamMatchmakingPlayersResponse::PlayersFailedToRespond.
-    abstract void PlayersFailedToRespond(ISteamMatchmakingPlayersResponse self) nothrow;
+    abstract void PlayersFailedToRespond() nothrow;
     /// ISteamMatchmakingPlayersResponse::PlayersRefreshComplete.
-    abstract void PlayersRefreshComplete(ISteamMatchmakingPlayersResponse self) nothrow;
+    abstract void PlayersRefreshComplete() nothrow;
 }
 
 /// C++ callback interface ISteamMatchmakingRulesResponse (isteammatchmaking.h), implemented by the application.
@@ -162,11 +159,11 @@ extern (C++) abstract class ISteamMatchmakingPlayersResponse
 extern (C++) abstract class ISteamMatchmakingRulesResponse
 {
     /// ISteamMatchmakingRulesResponse::RulesResponded.
-    abstract void RulesResponded(ISteamMatchmakingRulesResponse self, const(char)* pchRule, const(char)* pchValue) nothrow;
+    abstract void RulesResponded(const(char)* pchRule, const(char)* pchValue) nothrow;
     /// ISteamMatchmakingRulesResponse::RulesFailedToRespond.
-    abstract void RulesFailedToRespond(ISteamMatchmakingRulesResponse self) nothrow;
+    abstract void RulesFailedToRespond() nothrow;
     /// ISteamMatchmakingRulesResponse::RulesRefreshComplete.
-    abstract void RulesRefreshComplete(ISteamMatchmakingRulesResponse self) nothrow;
+    abstract void RulesRefreshComplete() nothrow;
 }
 
 /// Opaque handle to the ISteamMatchmakingServers interface (isteammatchmaking.h). Obtain it with `SteamAPI_SteamMatchmakingServers()`.
