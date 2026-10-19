@@ -14,6 +14,7 @@ import gen.emit;
 import gen.headers;
 import gen.model;
 import gen.probe;
+import gen.verify;
 
 int main(string[] args)
 {
@@ -25,6 +26,10 @@ int main(string[] args)
     string clang = "clang++";
     bool check;
     bool abi;
+    bool verify;
+    string verifyDir;
+    string ldc = "ldc2";
+    string dmd = "dmd";
 
     auto help = getopt(args, "sdk", "Steamworks SDK directory containing public/steam (default: sdk)",
             &sdk, "overrides", "Overrides file (default: tools/gen/overrides.json)", &overrides,
@@ -33,7 +38,14 @@ int main(string[] args)
             "dfmt", "Format generated D with this dfmt executable", &dfmt, "check",
             "Compare instead of writing; exit 1 if anything is stale",
             &check, "abi", "Also run the clang ABI probe and regenerate tests/abi",
-            &abi, "clang", "clang++ used by --abi (default: clang++)", &clang);
+            &abi, "clang", "clang++ used by --abi and --verify (default: clang++)", &clang, "verify",
+            "Instead of generating, verify the bindings against the headers for every target",
+            &verify, "verify-dir",
+            "Keep --verify's work files (descriptions, C++ checks) in this directory",
+            &verifyDir,
+            "ldc",
+            "ldc2 used by --verify (default: ldc2)",
+            &ldc, "dmd", "dmd used by --verify for the native target; empty to skip (default: dmd)", &dmd);
     if (help.helpWanted)
     {
         defaultGetoptPrinter("Usage: steamworks-gen [options]", help.options);
@@ -43,6 +55,22 @@ int main(string[] args)
     const steamDir = buildPath(sdk, "public", "steam");
     auto api = parseJSON(readText(buildPath(steamDir, "steam_api.json")));
     auto ovr = parseJSON(readText(overrides));
+    if (verify)
+    {
+        VerifyOptions vo;
+        vo.root = outDir;
+        vo.sdkInclude = buildPath(sdk, "public");
+        vo.clang = clang;
+        vo.ldc = ldc;
+        vo.dmd = dmd;
+        vo.workDir = verifyDir;
+        const failures = runVerify(ovr, vo);
+        if (failures)
+            stderr.writefln("%s verification failure(s)", failures);
+        else
+            writeln("the bindings match the headers on every target");
+        return failures ? 1 : 0;
+    }
     string[] ignored;
     foreach (v; ovr["ignoredHeaders"]["names"].array)
         ignored ~= v.str;
