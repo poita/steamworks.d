@@ -109,8 +109,8 @@ struct Function
     string method;
     /// Call result struct for async methods.
     string callResult;
-    /// Callback struct posted by the method.
-    string callback;
+    /// Callback structs posted because of the method.
+    string[] callbacks;
 }
 
 /// An interface accessor (`SteamAPI_SteamUser_v023`).
@@ -211,7 +211,9 @@ private Function parseMethod(const JSONValue m, string owner, string header)
     f.owner = owner;
     f.method = m.field("methodname");
     f.callResult = m.field("callresult");
-    f.callback = m.field("callback");
+    const cb = m.field("callback");
+    if (cb.length)
+        f.callbacks = [cb];
     f.header = header;
     return f;
 }
@@ -422,6 +424,25 @@ Model buildModel(const JSONValue api, const JSONValue ovr, HeaderInfo hdr)
         m.interfaces ~= itf;
     }
 
+    // steam_api.json attaches each standalone STEAM_CALL_BACK() annotation of
+    // the headers to the next method, which is not always the method that
+    // posts it; the overrides give those methods' callbacks explicitly.
+    if (auto mc = "methodCallbacks" in ovr.object)
+        foreach (name, v; mc.object)
+        {
+            if (name.startsWith("_"))
+                continue;
+            bool found;
+            foreach (ref itf; m.interfaces)
+                foreach (ref f; itf.methods)
+                    if (f.name == name)
+                    {
+                        f.callbacks = v.array.map!(x => x.str).array;
+                        found = true;
+                    }
+            enforce(found, "methodCallbacks names unknown method " ~ name);
+        }
+
     foreach (f; ovr["extraFunctions"].array)
     {
         Function fn;
@@ -549,6 +570,24 @@ unittest
     // Packing and the defining header come from the header scan.
     assert(m.callbacks[0].pack == Pack.callbackPack && m.callbacks[0].callbackId == 101);
     assert(m.structs[0].header == "p.h");
+}
+
+unittest
+{
+    auto o = fixtureOverrides();
+    o.object["methodCallbacks"] = parseJSON(`{ "_reason": "x", "SteamAPI_ISteamX_Find": ["Cb_t", "Cb2_t"] }`);
+    auto m = buildModel(fixtureApi, o, fixtureHeaders);
+    // An override replaces the callbacks steam_api.json gives a method.
+    assert(m.interfaces[0].methods[0].callbacks == ["Cb_t", "Cb2_t"]);
+}
+
+unittest
+{
+    import std.exception : assertThrown;
+
+    auto o = fixtureOverrides();
+    o.object["methodCallbacks"] = parseJSON(`{ "SteamAPI_ISteamX_Missing": [] }`);
+    assertThrown(buildModel(fixtureApi, o, fixtureHeaders));
 }
 
 unittest

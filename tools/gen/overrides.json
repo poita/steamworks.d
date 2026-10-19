@@ -305,6 +305,11 @@
     ]
   },
 
+  "methodCallbacks": {
+    "_reason": "steam_api.json attaches each standalone STEAM_CALL_BACK() line of the headers to the method declared after it. In isteaminput.h those lines document callbacks next to unrelated methods: EnableDeviceCallbacks enables SteamInputDeviceConnected_t and SteamInputDeviceDisconnected_t (SteamInputConfigurationLoaded_t fires regardless), and EnableActionEventCallbacks calls the function pointer it receives instead of posting a callback.",
+    "SteamAPI_ISteamInput_EnableDeviceCallbacks": ["SteamInputDeviceConnected_t", "SteamInputDeviceDisconnected_t"],
+    "SteamAPI_ISteamInput_EnableActionEventCallbacks": []
+  },
   "extraFunctions": [
     { "name": "SteamAPI_InitFlat", "returntype": "ESteamAPIInitResult", "params": [ { "paramname": "pOutErrMsg", "paramtype": "SteamErrMsg *" } ], "header": "steam_api.h",
       "doc": "Initializes the Steam API for flat-API users, checking the interface versions this binding was generated for. Prefer SteamAPI_InitEx, which mirrors the C++ inline function." },

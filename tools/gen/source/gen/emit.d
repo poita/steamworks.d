@@ -537,8 +537,9 @@ private string fnDoc(const ref Function f)
         const page = docPage(f.header);
         if (f.callResult.length)
             d ~= "\n\nCompletes asynchronously with call result `" ~ f.callResult ~ "`.";
-        if (f.callback.length)
-            d ~= "\n\nDelivers its result as callback `" ~ f.callback ~ "`.";
+        if (f.callbacks.length)
+            d ~= "\n\nMakes Steam post callback" ~ (f.callbacks.length > 1
+                    ? "s " : " ") ~ f.callbacks.map!(c => "`" ~ c ~ "`").join(" and ") ~ ".";
         if (page.length && f.owner.startsWith("ISteam"))
             d ~= "\n\nSee_Also: " ~ page ~ "#" ~ f.method;
     }
@@ -554,8 +555,8 @@ private string udas(const ref Function f)
     string u;
     if (f.callResult.length)
         u ~= "@SteamCallResult!(" ~ f.callResult ~ ")() ";
-    if (f.callback.length)
-        u ~= "@SteamCallback!(" ~ f.callback ~ ")() ";
+    if (f.callbacks.length)
+        u ~= "@SteamCallback!(" ~ f.callbacks.join(", ") ~ ")() ";
     return u;
 }
 

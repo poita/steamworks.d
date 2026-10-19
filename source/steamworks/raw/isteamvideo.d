@@ -44,7 +44,7 @@ version (SteamworksDynamic)
 
         /// ISteamVideo::GetOPFSettings (isteamvideo.h).
         ///
-        /// Delivers its result as callback `GetOPFSettingsResult_t`.
+        /// Makes Steam post callback `GetOPFSettingsResult_t`.
         ///
         /// See_Also: https://partner.steamgames.com/doc/api/ISteamVideo#GetOPFSettings
         @SteamCallback!(GetOPFSettingsResult_t)() PFN_SteamAPI_ISteamVideo_GetOPFSettings SteamAPI_ISteamVideo_GetOPFSettings;
@@ -74,7 +74,7 @@ else
 
         /// ISteamVideo::GetOPFSettings (isteamvideo.h).
         ///
-        /// Delivers its result as callback `GetOPFSettingsResult_t`.
+        /// Makes Steam post callback `GetOPFSettingsResult_t`.
         ///
         /// See_Also: https://partner.steamgames.com/doc/api/ISteamVideo#GetOPFSettings
         @SteamCallback!(GetOPFSettingsResult_t)() void SteamAPI_ISteamVideo_GetOPFSettings(ISteamVideo* self,

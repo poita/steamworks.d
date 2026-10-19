@@ -162,17 +162,15 @@ version (SteamworksDynamic)
 
         /// ISteamInput::EnableDeviceCallbacks (isteaminput.h).
         ///
-        /// Delivers its result as callback `SteamInputConfigurationLoaded_t`.
+        /// Makes Steam post callbacks `SteamInputDeviceConnected_t` and `SteamInputDeviceDisconnected_t`.
         ///
         /// See_Also: https://partner.steamgames.com/doc/api/ISteamInput#EnableDeviceCallbacks
-        @SteamCallback!(SteamInputConfigurationLoaded_t)() PFN_SteamAPI_ISteamInput_EnableDeviceCallbacks SteamAPI_ISteamInput_EnableDeviceCallbacks;
+        @SteamCallback!(SteamInputDeviceConnected_t, SteamInputDeviceDisconnected_t)() PFN_SteamAPI_ISteamInput_EnableDeviceCallbacks SteamAPI_ISteamInput_EnableDeviceCallbacks;
 
         /// ISteamInput::EnableActionEventCallbacks (isteaminput.h).
         ///
-        /// Delivers its result as callback `SteamInputGamepadSlotChange_t`.
-        ///
         /// See_Also: https://partner.steamgames.com/doc/api/ISteamInput#EnableActionEventCallbacks
-        @SteamCallback!(SteamInputGamepadSlotChange_t)() PFN_SteamAPI_ISteamInput_EnableActionEventCallbacks SteamAPI_ISteamInput_EnableActionEventCallbacks;
+        PFN_SteamAPI_ISteamInput_EnableActionEventCallbacks SteamAPI_ISteamInput_EnableActionEventCallbacks;
 
         /// ISteamInput::GetActionSetHandle (isteaminput.h).
         ///
@@ -415,19 +413,17 @@ else
 
         /// ISteamInput::EnableDeviceCallbacks (isteaminput.h).
         ///
-        /// Delivers its result as callback `SteamInputConfigurationLoaded_t`.
+        /// Makes Steam post callbacks `SteamInputDeviceConnected_t` and `SteamInputDeviceDisconnected_t`.
         ///
         /// See_Also: https://partner.steamgames.com/doc/api/ISteamInput#EnableDeviceCallbacks
-        @SteamCallback!(SteamInputConfigurationLoaded_t)() void SteamAPI_ISteamInput_EnableDeviceCallbacks(
+        @SteamCallback!(SteamInputDeviceConnected_t, SteamInputDeviceDisconnected_t)() void SteamAPI_ISteamInput_EnableDeviceCallbacks(
                 ISteamInput* self);
 
         /// ISteamInput::EnableActionEventCallbacks (isteaminput.h).
         ///
-        /// Delivers its result as callback `SteamInputGamepadSlotChange_t`.
-        ///
         /// See_Also: https://partner.steamgames.com/doc/api/ISteamInput#EnableActionEventCallbacks
-        @SteamCallback!(SteamInputGamepadSlotChange_t)() void SteamAPI_ISteamInput_EnableActionEventCallbacks(
-                ISteamInput* self, SteamInputActionEventCallbackPointer pCallback);
+        void SteamAPI_ISteamInput_EnableActionEventCallbacks(ISteamInput* self,
+                SteamInputActionEventCallbackPointer pCallback);
 
         /// ISteamInput::GetActionSetHandle (isteaminput.h).
         ///

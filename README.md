@@ -326,7 +326,8 @@ directory.
   otherwise fill `char` arrays with `0xFF` and floats with NaN).
 - **Asynchronous functions** carry their result type as a UDA:
   `getUDAs!(SteamAPI_ISteamUserStats_FindLeaderboard, SteamCallResult)[0].Result` is
-  `LeaderboardFindResult_t`; `SteamCallback!T` marks functions that post a callback.
+  `LeaderboardFindResult_t`; `SteamCallback!(T...)` marks functions that make Steam post
+  the callbacks `T` (`.Callbacks`, or `.Callback` when there is one).
 - **C++ callback interfaces** the application implements (`ISteamMatchmakingServerListResponse`,
   `...PingResponse`, `...PlayersResponse`, `...RulesResponse`, `CCallbackBase`,
   `ISteamNetworkingConnectionSignaling`, `ISteamNetworkingSignalingRecvContext`) are

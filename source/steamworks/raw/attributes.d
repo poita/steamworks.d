@@ -18,9 +18,16 @@ struct SteamCallResult(T)
     alias Result = T;
 }
 
-/// The function's outcome is posted as callback `T`.
-struct SteamCallback(T)
+/// Calling the function makes Steam post callbacks of the types `T`: its
+/// outcome, or the events it enables.
+struct SteamCallback(T...) if (T.length > 0)
 {
-    /// The callback struct.
-    alias Callback = T;
+    /// The callback structs.
+    alias Callbacks = T;
+
+    static if (T.length == 1)
+    {
+        /// The callback struct, when there is one.
+        alias Callback = T[0];
+    }
 }

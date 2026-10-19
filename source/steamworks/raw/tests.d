@@ -190,6 +190,28 @@ unittest
     static assert(hasUDA!(SteamAPI_ISteamVideo_GetOPFSettings, SteamCallback));
 }
 
+/// The callback UDAs name the callbacks a call makes Steam post: both device
+/// callbacks for EnableDeviceCallbacks, none for EnableActionEventCallbacks
+/// (it calls the function pointer it receives instead).
+unittest
+{
+    alias dev = getUDAs!(SteamAPI_ISteamInput_EnableDeviceCallbacks, SteamCallback);
+    static assert(dev.length == 1);
+    alias posted = typeof(dev[0]).Callbacks;
+    static assert(posted.length == 2);
+    static assert(is(posted[0] == SteamInputDeviceConnected_t));
+    static assert(is(posted[1] == SteamInputDeviceDisconnected_t));
+    static assert(!hasUDA!(SteamAPI_ISteamInput_EnableActionEventCallbacks, SteamCallback));
+}
+
+/// A function posting a single callback names it as `Callback`.
+unittest
+{
+    alias opf = getUDAs!(SteamAPI_ISteamVideo_GetOPFSettings, SteamCallback)[0];
+    static assert(is(typeof(opf).Callback == GetOPFSettingsResult_t));
+    static assert(typeof(opf).Callbacks.length == 1);
+}
+
 /// The C++ callback interfaces are subclassable from D.
 unittest
 {
