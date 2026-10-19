@@ -1,0 +1,29 @@
+name "steamworks-layer"
+description "Runs the D layer of steamworks against the real libsteam_api without needing Steam"
+license "BSL-1.0"
+targetType "executable"
+targetPath "bin"
+dependency "steamworks" path="../.."
+
+copyFiles "../../sdk/redistributable_bin/osx/libsteam_api.dylib" platform="osx"
+copyFiles "../../sdk/redistributable_bin/linux64/libsteam_api.so" platform="linux-x86_64"
+copyFiles "../../sdk/redistributable_bin/linuxarm64/libsteam_api.so" platform="linux-aarch64"
+copyFiles "../../sdk/redistributable_bin/linux32/libsteam_api.so" platform="linux-x86"
+copyFiles "../../sdk/redistributable_bin/win64/steam_api64.dll" platform="windows-x86_64"
+copyFiles "../../sdk/redistributable_bin/steam_api.dll" platform="windows-x86"
+
+configuration "linked" {
+	targetName "layer-linked"
+	subConfiguration "steamworks" "linked"
+	lflags "-L$PACKAGE_DIR/../../sdk/redistributable_bin/osx" platform="osx"
+	lflags "-L$PACKAGE_DIR/../../sdk/redistributable_bin/linux64" "-rpath=$$ORIGIN" platform="linux-x86_64"
+	lflags "-L$PACKAGE_DIR/../../sdk/redistributable_bin/linuxarm64" "-rpath=$$ORIGIN" platform="linux-aarch64"
+	lflags "-L$PACKAGE_DIR/../../sdk/redistributable_bin/linux32" "-rpath=$$ORIGIN" platform="linux-x86"
+	lflags "/LIBPATH:$PACKAGE_DIR/../../sdk/redistributable_bin/win64" platform="windows-x86_64"
+	lflags "/LIBPATH:$PACKAGE_DIR/../../sdk/redistributable_bin" platform="windows-x86"
+}
+
+configuration "dynamic" {
+	targetName "layer-dynamic"
+	subConfiguration "steamworks" "dynamic"
+}
