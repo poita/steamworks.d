@@ -325,3 +325,34 @@ unittest
     const ir = `@steamworks_layout = dso_local constant [3 x i64] [i64 8, i64 -1, i64 1364716109], align 16`;
     assert(parseLayout(ir, 3, "t") == [8, -1, 1_364_716_109]);
 }
+
+unittest
+{
+    import std.algorithm : any;
+
+    auto m = buildModel(fixtureApi, fixtureOverrides, fixtureHeaders);
+    auto es = probeEntries(m);
+    assert(es.any!(e => e.key == "Cb_t::k_iCallback" && e.d == "Cb_t.k_iCallback"));
+    assert(es.any!(e => e.key == "offsetof Cb_t::m_id" && e.cpp == "offsetof(Cb_t, m_id)"));
+    // Unsigned enums compare as unsigned on every compiler.
+    assert(es.any!(e => e.key == "k_EPlatAll" && e.cpp == "(long long)(unsigned int)k_EPlatAll"));
+    // Typedef alignment is measured as a struct member.
+    assert(es.any!(e => e.key == "member alignment uint32" && e.d == "AlignProbe!(uint32).t.offsetof"));
+}
+
+unittest
+{
+    import std.algorithm : canFind;
+
+    auto m = buildModel(fixtureApi, fixtureOverrides, fixtureHeaders);
+    const cpp = emitProbeCpp(m, "test");
+    assert(cpp.canFind(`static_assert(sw_streq(STEAMX_INTERFACE_VERSION, "SteamX001"), "STEAMX_INTERFACE_VERSION");`));
+    assert(cpp.canFind("static_assert(sw_same<decltype(&SteamAPI_ISteamX_Find), SteamAPICall_t (*)(ISteamX *, uint64_steamid)>::value"));
+    assert(cpp.canFind("1364716109LL\n};"));
+}
+
+unittest
+{
+    assert(scopeOf("CGameID::EGameIDType") == "CGameID::");
+    assert(scopeOf("EResult") == "");
+}

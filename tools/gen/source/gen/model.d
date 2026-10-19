@@ -465,3 +465,95 @@ void validate(const ref Model m)
     foreach (k, _; m.manualTypes)
         unique("type", k);
 }
+
+version (unittest)
+{
+    package JSONValue fixtureApi()
+    {
+        return parseJSON(`{
+            "typedefs": [ { "typedef": "uint32", "type": "unsigned int" },
+                          { "typedef": "intp", "type": "long long" } ],
+            "consts": [ { "constname": "k_uX", "consttype": "uint32", "constval": "0x1" } ],
+            "enums": [ { "enumname": "EPlat", "values": [ { "name": "k_EPlatAll", "value": "-1" } ] } ],
+            "structs": [ { "struct": "P_t", "fields": [ { "fieldname": "m_a", "fieldtype": "uint32" } ],
+                           "methods": [ { "methodname": "Get", "methodname_flat": "SteamAPI_P_t_Get",
+                                          "params": [], "returntype": "uint32" } ] } ],
+            "callback_structs": [ { "struct": "Cb_t", "callback_id": 101,
+                                    "fields": [ { "fieldname": "m_id", "fieldtype": "CSteamID" } ] } ],
+            "interfaces": [ { "classname": "ISteamX", "version_string": "SteamX001", "fields": [],
+                              "accessors": [ { "kind": "user", "name": "SteamX", "name_flat": "SteamAPI_SteamX_v001" } ],
+                              "methods": [ { "methodname": "Find", "methodname_flat": "SteamAPI_ISteamX_Find",
+                                             "callresult": "Cb_t", "returntype": "SteamAPICall_t",
+                                             "params": [ { "paramname": "id", "paramtype": "CSteamID",
+                                                           "paramtype_flat": "uint64_steamid" } ] } ] } ]
+        }`);
+    }
+
+    package JSONValue fixtureOverrides()
+    {
+        return parseJSON(`{
+            "typeMap": {}, "manualTypes": {}, "manualProbe": {}, "manualEnumsProbe": {},
+            "manualConstsProbe": {}, "unboundExports": { "names": [] }, "manualClasses": { "names": [] },
+            "typedefReplacements": [ { "name": "intp", "d": "alias intp = ptrdiff_t;", "reason": "pointer-sized" } ],
+            "extraTypedefs": [], "jsonOnlyConsts": { "names": [] }, "extraConsts": [],
+            "enumBaseTypes": { "EPlat": "uint" }, "jsonOnlyStructs": {}, "opaqueTypes": [],
+            "extraStructs": [], "structConsts": {}, "cppInterfaces": { "names": [] },
+            "extraFunctions": [ { "name": "SteamAPI_RunCallbacks", "returntype": "void", "params": [],
+                                  "header": "steam_api_common.h", "doc": "Dispatches." } ]
+        }`);
+    }
+
+    package HeaderInfo fixtureHeaders()
+    {
+        HeaderInfo h;
+        h.packOf = ["P_t": Pack.natural, "Cb_t": Pack.callbackPack];
+        h.headerOf = ["P_t": "p.h", "Cb_t": "isteamx.h", "ISteamX": "isteamx.h", "EPlat": "p.h"];
+        h.versionMacros = ["STEAMX_INTERFACE_VERSION": "SteamX001"];
+        return h;
+    }
+}
+
+unittest
+{
+    auto m = buildModel(fixtureApi, fixtureOverrides, fixtureHeaders);
+    // Methods gain an explicit `self`; the flat parameter type replaces CSteamID.
+    const f = m.interfaces[0].methods[0];
+    assert(f.params.length == 2 && f.params[0].name == "self");
+    assert(toCpp(f.params[0].type) == "ISteamX *");
+    assert(f.params[1].type.base == "uint64_steamid");
+    assert(f.callResult == "Cb_t");
+}
+
+unittest
+{
+    auto m = buildModel(fixtureApi, fixtureOverrides, fixtureHeaders);
+    // The versioned accessor becomes an exported function of the interface.
+    assert(m.interfaces[0].methods[$ - 1].name == "SteamAPI_SteamX_v001");
+    assert(m.interfaces[0].methods[$ - 1].params.length == 0);
+    assert(m.structFunctions[0].name == "SteamAPI_P_t_Get");
+    assert(m.structFunctions[0].params[0].name == "self");
+    assert(m.freeFunctions[0].header == "steam_api_common.h");
+    assert(m.allFunctions.length == 4);
+}
+
+unittest
+{
+    auto m = buildModel(fixtureApi, fixtureOverrides, fixtureHeaders);
+    // Typedef replacements win over the JSON spelling.
+    assert(m.typedefs[1].name == "intp" && m.typedefs[1].dCode == "alias intp = ptrdiff_t;");
+    // Enum base overrides reinterpret the JSON value.
+    assert(m.enums[0].baseType == "uint" && m.enums[0].values[0].value == uint.max);
+    // Packing and the defining header come from the header scan.
+    assert(m.callbacks[0].pack == Pack.callbackPack && m.callbacks[0].callbackId == 101);
+    assert(m.structs[0].header == "p.h");
+}
+
+unittest
+{
+    import std.exception : assertThrown;
+
+    auto h = fixtureHeaders();
+    h.packOf.remove("P_t");
+    // A JSON struct missing from the headers is an error, not a guess.
+    assertThrown(buildModel(fixtureApi, fixtureOverrides, h));
+}
