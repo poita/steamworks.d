@@ -3,7 +3,8 @@
 # prints (sizes, alignments, offsets, enumerator and constant values) with
 # the same quantities a D program measures at run time, built with dmd and
 # ldc2. On Apple silicon it repeats the comparison for x86_64 under Rosetta
-# when Rosetta is installed. Needs the SDK in ./sdk and clang++.
+# when Rosetta is installed. Needs the SDK in ./sdk and clang++. DCS lists
+# the D compilers to use (default "dmd ldc2"); the Rosetta run needs ldc2.
 set -eu
 ROOT="$(cd "$(dirname "$0")/../../.." && pwd)"
 cd "$ROOT"
@@ -11,6 +12,8 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 CXXFLAGS="-std=c++17 -ffreestanding -nostdinc++ -isystem tests/abi/stub -I sdk/public -Wno-invalid-offsetof"
 DFLAGS="-i -Isource -Itests/abi/source tests/abi/native/compare.d"
+DCS="${DCS:-dmd ldc2}"
+has_dc() { case " $DCS " in *" $1 "*) return 0 ;; esac; return 1; }
 fail=0
 
 # probe <arch> <outfile>
@@ -37,8 +40,11 @@ if [ "$(uname)" != Darwin ]; then
 fi
 native="$(uname -m)"
 probe "$native" "$WORK/cpp-native.txt"
-dmd -version=SteamworksDynamic $DFLAGS -of="$WORK/compare-dmd" >/dev/null
-compare "dmd $native" "$WORK/compare-dmd" "$WORK/cpp-native.txt"
+if has_dc dmd; then
+    dmd -version=SteamworksDynamic $DFLAGS -of="$WORK/compare-dmd" >/dev/null
+    compare "dmd $native" "$WORK/compare-dmd" "$WORK/cpp-native.txt"
+fi
+has_dc ldc2 || exit $fail
 ldc2 -d-version=SteamworksDynamic $DFLAGS -of="$WORK/compare-ldc2" >/dev/null 2>&1
 compare "ldc2 $native" "$WORK/compare-ldc2" "$WORK/cpp-native.txt"
 if [ "$native" = arm64 ] && arch -x86_64 /usr/bin/true 2>/dev/null; then

@@ -18,6 +18,9 @@
 #
 # Usage: tools/check-abi.sh [step...]    (default: every step)
 # Needs dub, dmd, ldc2, clang++, nm/objdump (Xcode's LLVM tools) and dfmt.
+# DCS lists the D compilers the steps use (default "dmd ldc2"); ldc2 is
+# required, dmd optional. The native step runs on macOS only, and verify and
+# exports need an nm/objdump that read Mach-O, ELF and COFF.
 # Steps run one at a time.
 set -eu
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -38,7 +41,10 @@ for s in $steps; do
         native) run native tests/abi/native/run.sh ;;
         verify)
             dub build -q --root=tools/gen
-            run verify tools/gen/bin/steamworks-gen --verify ;;
+            case " ${DCS:-dmd ldc2} " in
+                *" dmd "*) run verify tools/gen/bin/steamworks-gen --verify ;;
+                *) run verify tools/gen/bin/steamworks-gen --verify --dmd= ;;
+            esac ;;
         exports) run exports tests/exports/check.sh ;;
         cabi) run cabi tests/cabi/run.sh ;;
         *) echo "unknown step: $s" >&2; exit 2 ;;

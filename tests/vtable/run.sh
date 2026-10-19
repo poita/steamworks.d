@@ -2,6 +2,7 @@
 # Builds tests/vtable/main.d against shim.cpp, which calls the D response
 # classes through the SDK's C++ declarations, with each D compiler, and runs
 # it. On Apple silicon it also builds and runs an x86_64 binary (Rosetta).
+# DCS lists the D compilers to use (default "dmd ldc2").
 set -eu
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 OUT="$ROOT/tests/vtable/bin"
@@ -17,11 +18,12 @@ CXXFLAGS="-std=c++17 -O1 -fno-exceptions -fno-rtti -Wno-everything -I sdk/public
 DFLAGS="-i=steamworks -Isource"
 version_flag() { if [ "$1" = dmd ]; then echo -version=SteamworksDynamic; else echo -d-version=SteamworksDynamic; fi; }
 clang++ $CXXFLAGS -c tests/vtable/shim.cpp -o "$OUT/shim.o"
-for dc in dmd ldc2; do
+DCS="${DCS:-dmd ldc2}"
+for dc in $DCS; do
     "$dc" $(version_flag "$dc") $DFLAGS tests/vtable/main.d "$OUT/shim.o" -of="$OUT/vtable-$dc"
     run "$OUT/vtable-$dc" "$dc"
 done
-if [ "$(uname -s)-$(uname -m)" = "Darwin-arm64" ]; then
+if [ "$(uname -s)-$(uname -m)" = "Darwin-arm64" ] && case " $DCS " in *" ldc2 "*) true ;; *) false ;; esac; then
     clang++ -target x86_64-apple-macos11 $CXXFLAGS -c tests/vtable/shim.cpp -o "$OUT/shim-x86_64.o"
     ldc2 -mtriple=x86_64-apple-macos $(version_flag ldc2) $DFLAGS tests/vtable/main.d "$OUT/shim-x86_64.o" \
         -of="$OUT/vtable-ldc2-x86_64" 2>/dev/null
