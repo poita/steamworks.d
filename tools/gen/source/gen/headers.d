@@ -43,9 +43,14 @@ struct HeaderInfo
     string[string] headerOf;
     /// Interface version macros: name to value.
     string[string] versionMacros;
+    /// The version macros read from ignored headers, which do not compile
+    /// (so the ABI probe cannot check them).
+    bool[string] uncompiledVersionMacros;
 }
 
-/// Scans every `*.h` file in `dir` except those named in `ignored`.
+/// Scans every `*.h` file in `dir`. Of those named in `ignored`, only the
+/// interface version macros are read, so that interfaces without bindings
+/// still have their version strings.
 HeaderInfo scanHeaders(string dir, const string[] ignored = null)
 {
     import std.algorithm : canFind;
@@ -54,9 +59,41 @@ HeaderInfo scanHeaders(string dir, const string[] ignored = null)
     auto files = dirEntries(dir, "*.h", SpanMode.shallow).array;
     files.sort!((a, b) => a.name < b.name);
     foreach (f; files)
-        if (!ignored.canFind(baseName(f.name)))
+    {
+        if (ignored.canFind(baseName(f.name)))
+        {
+            HeaderInfo macros;
+            scanVersionMacros(asciiText(f.name), macros);
+            foreach (k, v; macros.versionMacros)
+            {
+                info.versionMacros[k] = v;
+                info.uncompiledVersionMacros[k] = true;
+            }
+        }
+        else
             scanHeader(baseName(f.name), asciiText(f.name), info);
+    }
     return info;
+}
+
+private enum versionMacroRe = ctRegex!(`^\s*#\s*define\s+(\w+_INTERFACE_VERSION\w*)\s+"([^"]*)"`);
+
+/// Records the interface version macros `text` defines.
+void scanVersionMacros(string text, ref HeaderInfo info)
+{
+    foreach (line; logicalLines(stripComments(text)))
+        if (auto m = line.matchFirst(versionMacroRe))
+            info.versionMacros[m[1]] = m[2];
+}
+
+unittest
+{
+    HeaderInfo info;
+    scanVersionMacros(
+            "class ISteamY {};\n#define STEAMY_INTERFACE_VERSION \"SteamY002\"\n// #define X_INTERFACE_VERSION \"no\"\n",
+            info);
+    assert(info.versionMacros == ["STEAMY_INTERFACE_VERSION": "SteamY002"]);
+    assert(info.headerOf.length == 0);
 }
 
 /// Reads a header, replacing non-ASCII bytes (the headers mix Latin-1 and
@@ -125,7 +162,6 @@ void scanHeader(string file, string text, ref HeaderInfo info)
     enum cbPackIfRe = ctRegex!(`^\s*#\s*if\s+defined\s*\(\s*VALVE_CALLBACK_PACK_SMALL\s*\)`);
     enum ifRe = ctRegex!(`^\s*#\s*if`);
     enum endifRe = ctRegex!(`^\s*#\s*endif`);
-    enum versionRe = ctRegex!(`^\s*#\s*define\s+(\w+_INTERFACE_VERSION\w*)\s+"([^"]*)"`);
     enum structHeadRe = ctRegex!(`^\s*(?:typedef\s+)?(?:struct|class|union)\s+(\w+)\s*(?::[^{;]*)?(\{)?\s*$`);
     enum structInlineRe = ctRegex!(`^\s*(?:typedef\s+)?(?:struct|class|union)\s+(\w+)\s*(?::[^{;]*)?\{`);
     enum callbackBeginRe = ctRegex!(`^\s*STEAM_CALLBACK_BEGIN\s*\(\s*(\w+)`);
@@ -203,7 +239,7 @@ void scanHeader(string file, string text, ref HeaderInfo info)
             stack = stack[0 .. $ - 1];
             continue;
         }
-        if (auto m = line.matchFirst(versionRe))
+        if (auto m = line.matchFirst(versionMacroRe))
         {
             info.versionMacros[m[1]] = m[2];
             continue;

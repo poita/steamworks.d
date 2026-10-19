@@ -245,6 +245,15 @@ unittest
     assert(CalculateSteamNetworkingPOPIDFromString("\xff\xfe\xfd") == 0xff_fefd);
 }
 
+/// Interfaces without a flat API still have their version strings, for
+/// ISteamClient's GetISteamGenericInterface.
+unittest
+{
+    static assert(STEAMMUSICREMOTE_INTERFACE_VERSION == "STEAMMUSICREMOTE_INTERFACE_VERSION001");
+    static assert(STEAMGAMECOORDINATOR_INTERFACE_VERSION == "SteamGameCoordinator001");
+    static assert(STEAMAPPTICKET_INTERFACE_VERSION == "STEAMAPPTICKET_INTERFACE_VERSION001");
+}
+
 /// The C++ callback interfaces are subclassable from D.
 unittest
 {

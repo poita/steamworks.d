@@ -5,7 +5,7 @@
 /// module of compile-time checks run for the same targets.
 module gen.probe;
 
-import std.algorithm : canFind, sort;
+import std.algorithm : canFind, filter, sort;
 import std.array : array, join, replace;
 import std.conv : to;
 import std.exception : enforce;
@@ -181,7 +181,7 @@ constexpr bool sw_streq(const char *a, const char *b) { return *a == *b && (*a =
 
 CPP";
     o ~= "\n// SteamInterface version strings.\n";
-    auto macros = m.headers.versionMacros.keys;
+    auto macros = m.headers.versionMacros.keys.filter!(k => k !in m.headers.uncompiledVersionMacros).array;
     macros.sort();
     foreach (k; macros)
         o ~= format!"static_assert(sw_streq(%s, \"%s\"), \"%s\");\n"(k, m.headers.versionMacros[k], k);
