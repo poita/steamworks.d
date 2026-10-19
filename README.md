@@ -1,13 +1,13 @@
 # steamworks.d
 
 D bindings for the [Steamworks SDK](https://partner.steamgames.com/doc/sdk) flat C API: every
-interface, method, callback, struct, enum and constant of **Steamworks SDK 1.64**, generated from
+interface, method, callback, struct, enum and constant of **Steamworks SDK 1.65**, generated from
 the SDK and verified against its headers and libraries on every platform Valve ships, with a thin
 D layer for initialization, callback dispatch and conversions on top.
 
-- **Complete.** All 1047 functions the SDK headers declare and `libsteam_api` exports, all 33
+- **Complete.** All 1057 functions the SDK headers declare and `libsteam_api` exports, all 34
   interfaces with their accessors and version strings, 196 callback structs, the plain structs,
-  112 enums, 163 constants and 78 typedefs. Nothing is a demo subset.
+  115 enums, 163 constants and 78 typedefs. Nothing is a demo subset.
 - **Faithful.** Valve's C and C++ names throughout, so the
   [Steamworks API reference](https://partner.steamgames.com/doc/api) applies as written.
 - **ABI-verified.** Sizes, alignments, field offsets, enumerator and constant values, function
@@ -114,17 +114,22 @@ executable:
 The linked configuration also needs the import library `win64/steam_api64.lib` (or
 `steam_api.lib`) on Windows at build time.
 
-**Ship the library from SDK 1.64**, the version these bindings are generated from. The flat API
+**Ship the library from SDK 1.65**, the version these bindings are generated from. The flat API
 is tied to its SDK release: a different release's `libsteam_api` exports other versioned
-accessors (SDK 1.65 replaces `SteamAPI_SteamUtils_v010` with `_v011`, for example) and can change
-function signatures. With the dynamic configuration a mismatched library shows up as
-`SteamworksLoadStatus.missingSymbols`; with the linked configuration as unresolved symbols. To
-move to another SDK release, [regenerate](#regenerating-for-a-new-sdk) the bindings.
+accessors (the SDK 1.64 library exports `SteamAPI_SteamUtils_v010` where these bindings call
+`_v011`, for example) and can change function signatures (1.65 added a parameter to
+`SteamAPI_ISteamNetworkingSockets_SendMessages`). With the dynamic configuration a mismatched
+library shows up as `SteamworksLoadStatus.missingSymbols`; with the linked configuration as
+unresolved symbols. To move to another SDK release, [regenerate](#regenerating-for-a-new-sdk) the
+bindings.
 
 For working on this repository, `tools/fetch-sdk.sh` puts an SDK into `./sdk` (gitignored): it
 copies the official SDK from `$STEAMWORKS_SDK` if set, and otherwise downloads the copy of the SDK
-1.64 headers and redistributables in the `steamworks-sys` crate on crates.io, verified against
-the index checksum. Use the official download for anything you ship.
+1.65 headers and redistributables in the [steamworks-rs](https://github.com/Noxime/steamworks-rs)
+repository at a pinned commit, verified by the SHA-256 of `steam_api.json`, `steam_api_flat.h`,
+every redistributable library and a digest of all extracted files (GitHub tarballs themselves are
+not byte-stable). `STEAMWORKS_SDK_VERSION=1.64` fetches the previous release from the
+`steamworks-sys` crate instead, for comparison. Use the official download for anything you ship.
 
 ## Quick start
 
@@ -238,10 +243,10 @@ each). Call `runFrame()` once per frame.
 
 ### Other conveniences
 
-- `steamworks.matchmaking`: `ServerListResponse`, `PingResponse`, `PlayersResponse` and
-  `RulesResponse` implement the C++ `ISteamMatchmaking*Response` interfaces with delegates, for
-  `ISteamMatchmakingServers`. Keep the object referenced from D while Steam holds it; the
-  delegates are `nothrow`.
+- `steamworks.matchmaking`: `ServerListResponse`, `PingResponse`, `PlayersResponse`,
+  `RulesResponse` and `ServerFriendsResponse` implement the C++ `ISteamMatchmaking*Response`
+  interfaces with delegates, for `ISteamMatchmakingServers`. Keep the object referenced from D
+  while Steam holds it; the delegates are `nothrow`.
 - `steamworks.steamid`: `id.accountID`, `id.universe`, `id.accountType`, `id.accountInstance`,
   `toSteam3String` / `formatSteamID` (`"[U:1:22202]"`, `@nogc` into a buffer),
   `toSteam2String` (`"STEAM_1:0:11101"`) and `parseSteamID` (decimal, Steam3 or Steam2 text).
@@ -325,7 +330,8 @@ directory.
   `SteamNetworkingConfigValue_t`.
 - **Steam IDs** cross the flat API as `uint64_steamid` (and `uint64_gameid`); `CSteamID` and
   `CGameID` are 8-byte, byte-aligned structs with the C++ accessors (`GetAccountID`,
-  `GetEAccountType`, `IsValid`, ...), used in callback structs.
+  `GetEAccountType`, `IsValid`, ...), used in callback structs and in the virtual functions of the
+  C++ callback interfaces (`ISteamMatchmakingServerFriendsResponse::AddFriendToList`).
 - **Enums** are D enums with the C++ underlying type. Every enumerator is also available
   unqualified, as in C++: `k_EResultOK` and `EResult.k_EResultOK` are the same constant.
 - **C++ references** (`const SteamNetworkingIPAddr &`) are `ref const(SteamNetworkingIPAddr)`;
@@ -342,10 +348,10 @@ directory.
   `LeaderboardFindResult_t`; `SteamCallback!(T...)` marks functions that make Steam post
   the callbacks `T` (`.Callbacks`, or `.Callback` when there is one).
 - **C++ callback interfaces** the application implements (`ISteamMatchmakingServerListResponse`,
-  `...PingResponse`, `...PlayersResponse`, `...RulesResponse`, `CCallbackBase`,
-  `ISteamNetworkingConnectionSignaling`, `ISteamNetworkingSignalingRecvContext`) are
-  `extern (C++)` abstract classes; derive an `extern (C++)` class, keep the object alive while
-  Steam holds it, and keep overrides `nothrow`.
+  `...PingResponse`, `...PlayersResponse`, `...RulesResponse`, `...ServerFriendsResponse`,
+  `CCallbackBase`, `ISteamNetworkingConnectionSignaling`,
+  `ISteamNetworkingSignalingRecvContext`) are `extern (C++)` abstract classes; derive an
+  `extern (C++)` class, keep the object alive while Steam holds it, and keep overrides `nothrow`.
 
 ## Modules
 
@@ -411,6 +417,9 @@ STEAMWORKS_SDK=/path/to/new/sdk tools/fetch-sdk.sh   # after moving the old ./sd
 tools/gen/generate.sh --sdk-version 1.xx             # regenerate source/steamworks/raw and tests/abi
 tools/check-abi.sh                                   # verify; then tests/run.sh
 ```
+
+Make the new version the generator's default (`sdkVersion` in `tools/gen/source/app.d`, which
+`generate.sh --check` uses) and pin the new SDK's checksums in `tools/fetch-sdk.sh`.
 
 `tools/gen` reads `steam_api.json` and scans the SDK headers for what the JSON lacks (the
 `#pragma pack` in force for each struct, the defining header, interface version macros, header-only
