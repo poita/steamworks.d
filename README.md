@@ -187,7 +187,9 @@ void main()
 
 `steamInit()` calls `SteamAPI_InitEx`, which checks that the user's Steam client supports every
 interface version these bindings call, and returns a `SteamInitResult` holding the
-`ESteamAPIInitResult` and Steam's message; it converts to `true` on success. `steamInitOrThrow()`
+`ESteamAPIInitResult` and Steam's message; it converts to `true` on success. `result.message`
+slices the result's own buffer, so keep the result in a variable (`steamInit().message` does not
+compile) and `idup` the text to keep it longer. `steamInitOrThrow()`
 throws a `SteamInitException` instead. Game servers use `steamGameServerInit(ip, gamePort,
 queryPort, serverMode, version)` and `steamGameServerShutdown()`. After a successful
 initialization both select manual dispatch (`SteamAPI_ManualDispatch_Init`, which steam_api.h

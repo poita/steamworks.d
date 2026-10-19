@@ -61,12 +61,6 @@ struct SteamInitResult
         return ok;
     }
 
-    /// The text of `errMsg`.
-    const(char)[] message() const return @safe pure nothrow @nogc
-    {
-        return fromCString(errMsg);
-    }
-
     private static SteamInitResult failure(ESteamAPIInitResult result, string msg) @trusted pure nothrow @nogc
     {
         SteamInitResult r;
@@ -76,6 +70,15 @@ struct SteamInitResult
         memcpy(r.errMsg.ptr, msg.ptr, n);
         return r;
     }
+}
+
+/// The text of `r.errMsg`, as `r.message`: a slice of `r`'s buffer, valid as
+/// long as `r` is. It takes `r` by reference so that it cannot be called on
+/// a temporary (`steamInit().message` does not compile); keep the result in
+/// a variable first, or `idup` the text to keep it longer.
+const(char)[] message(return ref const SteamInitResult r) @safe pure nothrow @nogc
+{
+    return fromCString(r.errMsg);
 }
 
 /// Thrown by `steamInitOrThrow` and `steamGameServerInitOrThrow`.
@@ -225,6 +228,15 @@ unittest
     auto e = new SteamInitException(r);
     assert(e.result == ESteamAPIInitResult.k_ESteamAPIInitResult_NoSteamClient);
     assert(e.msg == "no client");
+}
+
+unittest
+{
+    // The message is a slice of the result's buffer, so it is only available
+    // from a result kept in a variable, never from a temporary.
+    static assert(!__traits(compiles, { auto m = steamInit().message; }));
+    static assert(!__traits(compiles, { auto m = SteamInitResult.init.message; }));
+    static assert(__traits(compiles, { const r = steamInit(); auto m = r.message; }));
 }
 
 unittest
