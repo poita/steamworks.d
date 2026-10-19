@@ -6,7 +6,7 @@
 /// Each enumerator is also available unqualified (`k_EResultOK`), as in C++.
 module steamworks.raw.enums;
 
-/// ESteamIPType.
+/// ESteamIPType (steamtypes.h).
 enum ESteamIPType : int
 {
     k_ESteamIPTypeIPv4 = 0,
@@ -16,7 +16,7 @@ enum ESteamIPType : int
 enum k_ESteamIPTypeIPv4 = ESteamIPType.k_ESteamIPTypeIPv4; /// ditto
 enum k_ESteamIPTypeIPv6 = ESteamIPType.k_ESteamIPTypeIPv6; /// ditto
 
-/// EUniverse.
+/// EUniverse (steamuniverse.h).
 enum EUniverse : int
 {
     k_EUniverseInvalid = 0,
@@ -34,7 +34,9 @@ enum k_EUniverseInternal = EUniverse.k_EUniverseInternal; /// ditto
 enum k_EUniverseDev = EUniverse.k_EUniverseDev; /// ditto
 enum k_EUniverseMax = EUniverse.k_EUniverseMax; /// ditto
 
-/// EResult.
+/// EResult (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum EResult : int
 {
     k_EResultNone = 0,
@@ -302,7 +304,9 @@ enum k_EResultFamilySizeLimitExceeded = EResult.k_EResultFamilySizeLimitExceeded
 enum k_EResultOfflineAppCacheInvalid = EResult.k_EResultOfflineAppCacheInvalid; /// ditto
 enum k_EResultTryLater = EResult.k_EResultTryLater; /// ditto
 
-/// EVoiceResult.
+/// EVoiceResult (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum EVoiceResult : int
 {
     k_EVoiceResultOK = 0,
@@ -328,7 +332,9 @@ enum k_EVoiceResultUnsupportedCodec = EVoiceResult.k_EVoiceResultUnsupportedCode
 enum k_EVoiceResultReceiverOutOfDate = EVoiceResult.k_EVoiceResultReceiverOutOfDate; /// ditto
 enum k_EVoiceResultReceiverDidNotAnswer = EVoiceResult.k_EVoiceResultReceiverDidNotAnswer; /// ditto
 
-/// EDenyReason.
+/// EDenyReason (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum EDenyReason : int
 {
     k_EDenyInvalid = 0,
@@ -366,7 +372,9 @@ enum k_EDenySteamResponseTimedOut = EDenyReason.k_EDenySteamResponseTimedOut; //
 enum k_EDenySteamValidationStalled = EDenyReason.k_EDenySteamValidationStalled; /// ditto
 enum k_EDenySteamOwnerLeftGuestUser = EDenyReason.k_EDenySteamOwnerLeftGuestUser; /// ditto
 
-/// EBeginAuthSessionResult.
+/// EBeginAuthSessionResult (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum EBeginAuthSessionResult : int
 {
     k_EBeginAuthSessionResultOK = 0,
@@ -384,7 +392,9 @@ enum k_EBeginAuthSessionResultInvalidVersion = EBeginAuthSessionResult.k_EBeginA
 enum k_EBeginAuthSessionResultGameMismatch = EBeginAuthSessionResult.k_EBeginAuthSessionResultGameMismatch; /// ditto
 enum k_EBeginAuthSessionResultExpiredTicket = EBeginAuthSessionResult.k_EBeginAuthSessionResultExpiredTicket; /// ditto
 
-/// EAuthSessionResponse.
+/// EAuthSessionResponse (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum EAuthSessionResponse : int
 {
     k_EAuthSessionResponseOK = 0,
@@ -414,7 +424,9 @@ enum k_EAuthSessionResponsePublisherIssuedBan = EAuthSessionResponse.k_EAuthSess
 enum k_EAuthSessionResponseAuthTicketNetworkIdentityFailure = EAuthSessionResponse
         .k_EAuthSessionResponseAuthTicketNetworkIdentityFailure; /// ditto
 
-/// EUserHasLicenseForAppResult.
+/// EUserHasLicenseForAppResult (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum EUserHasLicenseForAppResult : int
 {
     k_EUserHasLicenseResultHasLicense = 0,
@@ -426,7 +438,9 @@ enum k_EUserHasLicenseResultHasLicense = EUserHasLicenseForAppResult.k_EUserHasL
 enum k_EUserHasLicenseResultDoesNotHaveLicense = EUserHasLicenseForAppResult.k_EUserHasLicenseResultDoesNotHaveLicense; /// ditto
 enum k_EUserHasLicenseResultNoAuth = EUserHasLicenseForAppResult.k_EUserHasLicenseResultNoAuth; /// ditto
 
-/// EAccountType.
+/// EAccountType (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum EAccountType : int
 {
     k_EAccountTypeInvalid = 0,
@@ -456,7 +470,9 @@ enum k_EAccountTypeConsoleUser = EAccountType.k_EAccountTypeConsoleUser; /// dit
 enum k_EAccountTypeAnonUser = EAccountType.k_EAccountTypeAnonUser; /// ditto
 enum k_EAccountTypeMax = EAccountType.k_EAccountTypeMax; /// ditto
 
-/// EChatEntryType.
+/// EChatEntryType (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum EChatEntryType : int
 {
     k_EChatEntryTypeInvalid = 0,
@@ -486,7 +502,9 @@ enum k_EChatEntryTypeDisconnected = EChatEntryType.k_EChatEntryTypeDisconnected;
 enum k_EChatEntryTypeHistoricalChat = EChatEntryType.k_EChatEntryTypeHistoricalChat; /// ditto
 enum k_EChatEntryTypeLinkBlocked = EChatEntryType.k_EChatEntryTypeLinkBlocked; /// ditto
 
-/// EChatRoomEnterResponse.
+/// EChatRoomEnterResponse (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum EChatRoomEnterResponse : int
 {
     k_EChatRoomEnterResponseSuccess = 1,
@@ -516,7 +534,9 @@ enum k_EChatRoomEnterResponseMemberBlockedYou = EChatRoomEnterResponse.k_EChatRo
 enum k_EChatRoomEnterResponseYouBlockedMember = EChatRoomEnterResponse.k_EChatRoomEnterResponseYouBlockedMember; /// ditto
 enum k_EChatRoomEnterResponseRatelimitExceeded = EChatRoomEnterResponse.k_EChatRoomEnterResponseRatelimitExceeded; /// ditto
 
-/// EChatSteamIDInstanceFlags.
+/// EChatSteamIDInstanceFlags (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum EChatSteamIDInstanceFlags : int
 {
     k_EChatAccountInstanceMask = 4095,
@@ -530,7 +550,9 @@ enum k_EChatInstanceFlagClan = EChatSteamIDInstanceFlags.k_EChatInstanceFlagClan
 enum k_EChatInstanceFlagLobby = EChatSteamIDInstanceFlags.k_EChatInstanceFlagLobby; /// ditto
 enum k_EChatInstanceFlagMMSLobby = EChatSteamIDInstanceFlags.k_EChatInstanceFlagMMSLobby; /// ditto
 
-/// ENotificationPosition.
+/// ENotificationPosition (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum ENotificationPosition : int
 {
     k_EPositionInvalid = -1,
@@ -546,7 +568,9 @@ enum k_EPositionTopRight = ENotificationPosition.k_EPositionTopRight; /// ditto
 enum k_EPositionBottomLeft = ENotificationPosition.k_EPositionBottomLeft; /// ditto
 enum k_EPositionBottomRight = ENotificationPosition.k_EPositionBottomRight; /// ditto
 
-/// EBroadcastUploadResult.
+/// EBroadcastUploadResult (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum EBroadcastUploadResult : int
 {
     k_EBroadcastUploadResultNone = 0,
@@ -600,7 +624,9 @@ enum k_EBroadcastUploadResultDisconnect = EBroadcastUploadResult.k_EBroadcastUpl
 enum k_EBroadcastUploadResultVideoInitFailed = EBroadcastUploadResult.k_EBroadcastUploadResultVideoInitFailed; /// ditto
 enum k_EBroadcastUploadResultAudioInitFailed = EBroadcastUploadResult.k_EBroadcastUploadResultAudioInitFailed; /// ditto
 
-/// EMarketNotAllowedReasonFlags.
+/// EMarketNotAllowedReasonFlags (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum EMarketNotAllowedReasonFlags : int
 {
     k_EMarketNotAllowedReason_None = 0,
@@ -653,7 +679,9 @@ enum k_EMarketNotAllowedReason_AcceptedWalletGift = EMarketNotAllowedReasonFlags
         .k_EMarketNotAllowedReason_AcceptedWalletGift; /// ditto
 enum k_EMarketNotAllowedReason_TradeCooldown = EMarketNotAllowedReasonFlags.k_EMarketNotAllowedReason_TradeCooldown; /// ditto
 
-/// EDurationControlProgress.
+/// EDurationControlProgress (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum EDurationControlProgress : int
 {
     k_EDurationControlProgress_Full = 0,
@@ -671,7 +699,9 @@ enum k_EDurationControl_ExitSoon_3h = EDurationControlProgress.k_EDurationContro
 enum k_EDurationControl_ExitSoon_5h = EDurationControlProgress.k_EDurationControl_ExitSoon_5h; /// ditto
 enum k_EDurationControl_ExitSoon_Night = EDurationControlProgress.k_EDurationControl_ExitSoon_Night; /// ditto
 
-/// EDurationControlNotification.
+/// EDurationControlNotification (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum EDurationControlNotification : int
 {
     k_EDurationControlNotification_None = 0,
@@ -697,7 +727,9 @@ enum k_EDurationControlNotification_ExitSoon_5h = EDurationControlNotification
 enum k_EDurationControlNotification_ExitSoon_Night = EDurationControlNotification
         .k_EDurationControlNotification_ExitSoon_Night; /// ditto
 
-/// EDurationControlOnlineState.
+/// EDurationControlOnlineState (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum EDurationControlOnlineState : int
 {
     k_EDurationControlOnlineState_Invalid = 0,
@@ -712,7 +744,9 @@ enum k_EDurationControlOnlineState_Online = EDurationControlOnlineState.k_EDurat
 enum k_EDurationControlOnlineState_OnlineHighPri = EDurationControlOnlineState
         .k_EDurationControlOnlineState_OnlineHighPri; /// ditto
 
-/// EBetaBranchFlags.
+/// EBetaBranchFlags (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum EBetaBranchFlags : int
 {
     k_EBetaBranch_None = 0,
@@ -730,7 +764,9 @@ enum k_EBetaBranch_Private = EBetaBranchFlags.k_EBetaBranch_Private; /// ditto
 enum k_EBetaBranch_Selected = EBetaBranchFlags.k_EBetaBranch_Selected; /// ditto
 enum k_EBetaBranch_Installed = EBetaBranchFlags.k_EBetaBranch_Installed; /// ditto
 
-/// ESteamIPv6ConnectivityProtocol.
+/// ESteamIPv6ConnectivityProtocol (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum ESteamIPv6ConnectivityProtocol : int
 {
     k_ESteamIPv6ConnectivityProtocol_Invalid = 0,
@@ -742,7 +778,9 @@ enum k_ESteamIPv6ConnectivityProtocol_Invalid = ESteamIPv6ConnectivityProtocol.k
 enum k_ESteamIPv6ConnectivityProtocol_HTTP = ESteamIPv6ConnectivityProtocol.k_ESteamIPv6ConnectivityProtocol_HTTP; /// ditto
 enum k_ESteamIPv6ConnectivityProtocol_UDP = ESteamIPv6ConnectivityProtocol.k_ESteamIPv6ConnectivityProtocol_UDP; /// ditto
 
-/// ESteamIPv6ConnectivityState.
+/// ESteamIPv6ConnectivityState (steamclientpublic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum ESteamIPv6ConnectivityState : int
 {
     k_ESteamIPv6ConnectivityState_Unknown = 0,
@@ -754,7 +792,9 @@ enum k_ESteamIPv6ConnectivityState_Unknown = ESteamIPv6ConnectivityState.k_EStea
 enum k_ESteamIPv6ConnectivityState_Good = ESteamIPv6ConnectivityState.k_ESteamIPv6ConnectivityState_Good; /// ditto
 enum k_ESteamIPv6ConnectivityState_Bad = ESteamIPv6ConnectivityState.k_ESteamIPv6ConnectivityState_Bad; /// ditto
 
-/// EFriendRelationship.
+/// EFriendRelationship (isteamfriends.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamFriends
 enum EFriendRelationship : int
 {
     k_EFriendRelationshipNone = 0,
@@ -778,7 +818,9 @@ enum k_EFriendRelationshipIgnoredFriend = EFriendRelationship.k_EFriendRelations
 enum k_EFriendRelationshipSuggested_DEPRECATED = EFriendRelationship.k_EFriendRelationshipSuggested_DEPRECATED; /// ditto
 enum k_EFriendRelationshipMax = EFriendRelationship.k_EFriendRelationshipMax; /// ditto
 
-/// EPersonaState.
+/// EPersonaState (isteamfriends.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamFriends
 enum EPersonaState : int
 {
     k_EPersonaStateOffline = 0,
@@ -802,7 +844,9 @@ enum k_EPersonaStateLookingToPlay = EPersonaState.k_EPersonaStateLookingToPlay; 
 enum k_EPersonaStateInvisible = EPersonaState.k_EPersonaStateInvisible; /// ditto
 enum k_EPersonaStateMax = EPersonaState.k_EPersonaStateMax; /// ditto
 
-/// EFriendFlags.
+/// EFriendFlags (isteamfriends.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamFriends
 enum EFriendFlags : int
 {
     k_EFriendFlagNone = 0,
@@ -832,7 +876,9 @@ enum k_EFriendFlagIgnoredFriend = EFriendFlags.k_EFriendFlagIgnoredFriend; /// d
 enum k_EFriendFlagChatMember = EFriendFlags.k_EFriendFlagChatMember; /// ditto
 enum k_EFriendFlagAll = EFriendFlags.k_EFriendFlagAll; /// ditto
 
-/// EOverlayToStoreFlag.
+/// EOverlayToStoreFlag (isteamfriends.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamFriends
 enum EOverlayToStoreFlag : int
 {
     k_EOverlayToStoreFlag_None = 0,
@@ -844,7 +890,9 @@ enum k_EOverlayToStoreFlag_None = EOverlayToStoreFlag.k_EOverlayToStoreFlag_None
 enum k_EOverlayToStoreFlag_AddToCart = EOverlayToStoreFlag.k_EOverlayToStoreFlag_AddToCart; /// ditto
 enum k_EOverlayToStoreFlag_AddToCartAndShow = EOverlayToStoreFlag.k_EOverlayToStoreFlag_AddToCartAndShow; /// ditto
 
-/// EActivateGameOverlayToWebPageMode.
+/// EActivateGameOverlayToWebPageMode (isteamfriends.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamFriends
 enum EActivateGameOverlayToWebPageMode : int
 {
     k_EActivateGameOverlayToWebPageMode_Default = 0,
@@ -856,7 +904,9 @@ enum k_EActivateGameOverlayToWebPageMode_Default = EActivateGameOverlayToWebPage
 enum k_EActivateGameOverlayToWebPageMode_Modal = EActivateGameOverlayToWebPageMode
         .k_EActivateGameOverlayToWebPageMode_Modal; /// ditto
 
-/// ECommunityProfileItemType.
+/// ECommunityProfileItemType (isteamfriends.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamFriends
 enum ECommunityProfileItemType : int
 {
     k_ECommunityProfileItemType_AnimatedAvatar = 0,
@@ -875,7 +925,9 @@ enum k_ECommunityProfileItemType_ProfileBackground = ECommunityProfileItemType
 enum k_ECommunityProfileItemType_MiniProfileBackground = ECommunityProfileItemType
         .k_ECommunityProfileItemType_MiniProfileBackground; /// ditto
 
-/// ECommunityProfileItemProperty.
+/// ECommunityProfileItemProperty (isteamfriends.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamFriends
 enum ECommunityProfileItemProperty : int
 {
     k_ECommunityProfileItemProperty_ImageSmall = 0,
@@ -912,7 +964,9 @@ enum k_ECommunityProfileItemProperty_MovieWebMSmall = ECommunityProfileItemPrope
 enum k_ECommunityProfileItemProperty_MovieMP4Small = ECommunityProfileItemProperty
         .k_ECommunityProfileItemProperty_MovieMP4Small; /// ditto
 
-/// EPersonaChange.
+/// EPersonaChange (isteamfriends.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamFriends
 enum EPersonaChange : int
 {
     k_EPersonaChangeName = 1,
@@ -948,7 +1002,9 @@ enum k_EPersonaChangeNickname = EPersonaChange.k_EPersonaChangeNickname; /// dit
 enum k_EPersonaChangeSteamLevel = EPersonaChange.k_EPersonaChangeSteamLevel; /// ditto
 enum k_EPersonaChangeRichPresence = EPersonaChange.k_EPersonaChangeRichPresence; /// ditto
 
-/// ESteamAPICallFailure.
+/// ESteamAPICallFailure (isteamutils.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUtils
 enum ESteamAPICallFailure : int
 {
     k_ESteamAPICallFailureNone = -1,
@@ -964,7 +1020,9 @@ enum k_ESteamAPICallFailureNetworkFailure = ESteamAPICallFailure.k_ESteamAPICall
 enum k_ESteamAPICallFailureInvalidHandle = ESteamAPICallFailure.k_ESteamAPICallFailureInvalidHandle; /// ditto
 enum k_ESteamAPICallFailureMismatchedCallback = ESteamAPICallFailure.k_ESteamAPICallFailureMismatchedCallback; /// ditto
 
-/// EGamepadTextInputMode.
+/// EGamepadTextInputMode (isteamutils.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUtils
 enum EGamepadTextInputMode : int
 {
     k_EGamepadTextInputModeNormal = 0,
@@ -974,7 +1032,9 @@ enum EGamepadTextInputMode : int
 enum k_EGamepadTextInputModeNormal = EGamepadTextInputMode.k_EGamepadTextInputModeNormal; /// ditto
 enum k_EGamepadTextInputModePassword = EGamepadTextInputMode.k_EGamepadTextInputModePassword; /// ditto
 
-/// EGamepadTextInputLineMode.
+/// EGamepadTextInputLineMode (isteamutils.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUtils
 enum EGamepadTextInputLineMode : int
 {
     k_EGamepadTextInputLineModeSingleLine = 0,
@@ -984,7 +1044,9 @@ enum EGamepadTextInputLineMode : int
 enum k_EGamepadTextInputLineModeSingleLine = EGamepadTextInputLineMode.k_EGamepadTextInputLineModeSingleLine; /// ditto
 enum k_EGamepadTextInputLineModeMultipleLines = EGamepadTextInputLineMode.k_EGamepadTextInputLineModeMultipleLines; /// ditto
 
-/// EFloatingGamepadTextInputMode.
+/// EFloatingGamepadTextInputMode (isteamutils.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUtils
 enum EFloatingGamepadTextInputMode : int
 {
     k_EFloatingGamepadTextInputModeModeSingleLine = 0,
@@ -1001,7 +1063,9 @@ enum k_EFloatingGamepadTextInputModeModeEmail = EFloatingGamepadTextInputMode.k_
 enum k_EFloatingGamepadTextInputModeModeNumeric = EFloatingGamepadTextInputMode
         .k_EFloatingGamepadTextInputModeModeNumeric; /// ditto
 
-/// ETextFilteringContext.
+/// ETextFilteringContext (isteamutils.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUtils
 enum ETextFilteringContext : int
 {
     k_ETextFilteringContextUnknown = 0,
@@ -1015,7 +1079,9 @@ enum k_ETextFilteringContextGameContent = ETextFilteringContext.k_ETextFiltering
 enum k_ETextFilteringContextChat = ETextFilteringContext.k_ETextFilteringContextChat; /// ditto
 enum k_ETextFilteringContextName = ETextFilteringContext.k_ETextFilteringContextName; /// ditto
 
-/// ECheckFileSignature.
+/// ECheckFileSignature (isteamutils.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUtils
 enum ECheckFileSignature : int
 {
     k_ECheckFileSignatureInvalidSignature = 0,
@@ -1033,7 +1099,7 @@ enum k_ECheckFileSignatureNoSignaturesFoundForThisApp = ECheckFileSignature
 enum k_ECheckFileSignatureNoSignaturesFoundForThisFile = ECheckFileSignature
         .k_ECheckFileSignatureNoSignaturesFoundForThisFile; /// ditto
 
-/// EMatchMakingServerResponse.
+/// EMatchMakingServerResponse (matchmakingtypes.h).
 enum EMatchMakingServerResponse : int
 {
     eServerResponded = 0,
@@ -1045,7 +1111,9 @@ enum eServerResponded = EMatchMakingServerResponse.eServerResponded; /// ditto
 enum eServerFailedToRespond = EMatchMakingServerResponse.eServerFailedToRespond; /// ditto
 enum eNoServersListedOnMasterServer = EMatchMakingServerResponse.eNoServersListedOnMasterServer; /// ditto
 
-/// ELobbyType.
+/// ELobbyType (isteammatchmaking.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamMatchmaking
 enum ELobbyType : int
 {
     k_ELobbyTypePrivate = 0,
@@ -1061,7 +1129,9 @@ enum k_ELobbyTypePublic = ELobbyType.k_ELobbyTypePublic; /// ditto
 enum k_ELobbyTypeInvisible = ELobbyType.k_ELobbyTypeInvisible; /// ditto
 enum k_ELobbyTypePrivateUnique = ELobbyType.k_ELobbyTypePrivateUnique; /// ditto
 
-/// ELobbyComparison.
+/// ELobbyComparison (isteammatchmaking.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamMatchmaking
 enum ELobbyComparison : int
 {
     k_ELobbyComparisonEqualToOrLessThan = -2,
@@ -1079,7 +1149,9 @@ enum k_ELobbyComparisonGreaterThan = ELobbyComparison.k_ELobbyComparisonGreaterT
 enum k_ELobbyComparisonEqualToOrGreaterThan = ELobbyComparison.k_ELobbyComparisonEqualToOrGreaterThan; /// ditto
 enum k_ELobbyComparisonNotEqual = ELobbyComparison.k_ELobbyComparisonNotEqual; /// ditto
 
-/// ELobbyDistanceFilter.
+/// ELobbyDistanceFilter (isteammatchmaking.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamMatchmaking
 enum ELobbyDistanceFilter : int
 {
     k_ELobbyDistanceFilterClose = 0,
@@ -1093,7 +1165,9 @@ enum k_ELobbyDistanceFilterDefault = ELobbyDistanceFilter.k_ELobbyDistanceFilter
 enum k_ELobbyDistanceFilterFar = ELobbyDistanceFilter.k_ELobbyDistanceFilterFar; /// ditto
 enum k_ELobbyDistanceFilterWorldwide = ELobbyDistanceFilter.k_ELobbyDistanceFilterWorldwide; /// ditto
 
-/// EChatMemberStateChange.
+/// EChatMemberStateChange (isteammatchmaking.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamMatchmaking
 enum EChatMemberStateChange : int
 {
     k_EChatMemberStateChangeEntered = 1,
@@ -1109,7 +1183,9 @@ enum k_EChatMemberStateChangeDisconnected = EChatMemberStateChange.k_EChatMember
 enum k_EChatMemberStateChangeKicked = EChatMemberStateChange.k_EChatMemberStateChangeKicked; /// ditto
 enum k_EChatMemberStateChangeBanned = EChatMemberStateChange.k_EChatMemberStateChangeBanned; /// ditto
 
-/// ESteamPartyBeaconLocationType.
+/// ESteamPartyBeaconLocationType (isteammatchmaking.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamMatchmaking
 enum ESteamPartyBeaconLocationType : int
 {
     k_ESteamPartyBeaconLocationType_Invalid = 0,
@@ -1122,7 +1198,9 @@ enum k_ESteamPartyBeaconLocationType_ChatGroup = ESteamPartyBeaconLocationType
         .k_ESteamPartyBeaconLocationType_ChatGroup; /// ditto
 enum k_ESteamPartyBeaconLocationType_Max = ESteamPartyBeaconLocationType.k_ESteamPartyBeaconLocationType_Max; /// ditto
 
-/// ESteamPartyBeaconLocationData.
+/// ESteamPartyBeaconLocationData (isteammatchmaking.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamMatchmaking
 enum ESteamPartyBeaconLocationData : int
 {
     k_ESteamPartyBeaconLocationDataInvalid = 0,
@@ -1141,7 +1219,9 @@ enum k_ESteamPartyBeaconLocationDataIconURLMedium = ESteamPartyBeaconLocationDat
 enum k_ESteamPartyBeaconLocationDataIconURLLarge = ESteamPartyBeaconLocationData
         .k_ESteamPartyBeaconLocationDataIconURLLarge; /// ditto
 
-/// ERemoteStoragePlatform.
+/// ERemoteStoragePlatform (isteamremotestorage.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamRemoteStorage
 enum ERemoteStoragePlatform : uint
 {
     k_ERemoteStoragePlatformNone = 0,
@@ -1165,7 +1245,9 @@ enum k_ERemoteStoragePlatformAndroid = ERemoteStoragePlatform.k_ERemoteStoragePl
 enum k_ERemoteStoragePlatformIOS = ERemoteStoragePlatform.k_ERemoteStoragePlatformIOS; /// ditto
 enum k_ERemoteStoragePlatformAll = ERemoteStoragePlatform.k_ERemoteStoragePlatformAll; /// ditto
 
-/// ERemoteStoragePublishedFileVisibility.
+/// ERemoteStoragePublishedFileVisibility (isteamremotestorage.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamRemoteStorage
 enum ERemoteStoragePublishedFileVisibility : int
 {
     k_ERemoteStoragePublishedFileVisibilityPublic = 0,
@@ -1183,7 +1265,9 @@ enum k_ERemoteStoragePublishedFileVisibilityPrivate = ERemoteStoragePublishedFil
 enum k_ERemoteStoragePublishedFileVisibilityUnlisted = ERemoteStoragePublishedFileVisibility
         .k_ERemoteStoragePublishedFileVisibilityUnlisted; /// ditto
 
-/// EWorkshopFileType.
+/// EWorkshopFileType (isteamremotestorage.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamRemoteStorage
 enum EWorkshopFileType : int
 {
     k_EWorkshopFileTypeFirst = 0,
@@ -1227,7 +1311,9 @@ enum k_EWorkshopFileTypeGameManagedItem = EWorkshopFileType.k_EWorkshopFileTypeG
 enum k_EWorkshopFileTypeClip = EWorkshopFileType.k_EWorkshopFileTypeClip; /// ditto
 enum k_EWorkshopFileTypeMax = EWorkshopFileType.k_EWorkshopFileTypeMax; /// ditto
 
-/// EWorkshopVote.
+/// EWorkshopVote (isteamremotestorage.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamRemoteStorage
 enum EWorkshopVote : int
 {
     k_EWorkshopVoteUnvoted = 0,
@@ -1241,7 +1327,9 @@ enum k_EWorkshopVoteFor = EWorkshopVote.k_EWorkshopVoteFor; /// ditto
 enum k_EWorkshopVoteAgainst = EWorkshopVote.k_EWorkshopVoteAgainst; /// ditto
 enum k_EWorkshopVoteLater = EWorkshopVote.k_EWorkshopVoteLater; /// ditto
 
-/// EWorkshopFileAction.
+/// EWorkshopFileAction (isteamremotestorage.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamRemoteStorage
 enum EWorkshopFileAction : int
 {
     k_EWorkshopFileActionPlayed = 0,
@@ -1251,7 +1339,9 @@ enum EWorkshopFileAction : int
 enum k_EWorkshopFileActionPlayed = EWorkshopFileAction.k_EWorkshopFileActionPlayed; /// ditto
 enum k_EWorkshopFileActionCompleted = EWorkshopFileAction.k_EWorkshopFileActionCompleted; /// ditto
 
-/// EWorkshopEnumerationType.
+/// EWorkshopEnumerationType (isteamremotestorage.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamRemoteStorage
 enum EWorkshopEnumerationType : int
 {
     k_EWorkshopEnumerationTypeRankedByVote = 0,
@@ -1273,7 +1363,9 @@ enum k_EWorkshopEnumerationTypeContentByFriends = EWorkshopEnumerationType.k_EWo
 enum k_EWorkshopEnumerationTypeRecentFromFollowedUsers = EWorkshopEnumerationType
         .k_EWorkshopEnumerationTypeRecentFromFollowedUsers; /// ditto
 
-/// EWorkshopVideoProvider.
+/// EWorkshopVideoProvider (isteamremotestorage.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamRemoteStorage
 enum EWorkshopVideoProvider : int
 {
     k_EWorkshopVideoProviderNone = 0,
@@ -1283,7 +1375,9 @@ enum EWorkshopVideoProvider : int
 enum k_EWorkshopVideoProviderNone = EWorkshopVideoProvider.k_EWorkshopVideoProviderNone; /// ditto
 enum k_EWorkshopVideoProviderYoutube = EWorkshopVideoProvider.k_EWorkshopVideoProviderYoutube; /// ditto
 
-/// EUGCReadAction.
+/// EUGCReadAction (isteamremotestorage.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamRemoteStorage
 enum EUGCReadAction : int
 {
     k_EUGCRead_ContinueReadingUntilFinished = 0,
@@ -1295,7 +1389,9 @@ enum k_EUGCRead_ContinueReadingUntilFinished = EUGCReadAction.k_EUGCRead_Continu
 enum k_EUGCRead_ContinueReading = EUGCReadAction.k_EUGCRead_ContinueReading; /// ditto
 enum k_EUGCRead_Close = EUGCReadAction.k_EUGCRead_Close; /// ditto
 
-/// ERemoteStorageLocalFileChange.
+/// ERemoteStorageLocalFileChange (isteamremotestorage.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamRemoteStorage
 enum ERemoteStorageLocalFileChange : int
 {
     k_ERemoteStorageLocalFileChange_Invalid = 0,
@@ -1309,7 +1405,9 @@ enum k_ERemoteStorageLocalFileChange_FileUpdated = ERemoteStorageLocalFileChange
 enum k_ERemoteStorageLocalFileChange_FileDeleted = ERemoteStorageLocalFileChange
         .k_ERemoteStorageLocalFileChange_FileDeleted; /// ditto
 
-/// ERemoteStorageFilePathType.
+/// ERemoteStorageFilePathType (isteamremotestorage.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamRemoteStorage
 enum ERemoteStorageFilePathType : int
 {
     k_ERemoteStorageFilePathType_Invalid = 0,
@@ -1321,7 +1419,9 @@ enum k_ERemoteStorageFilePathType_Invalid = ERemoteStorageFilePathType.k_ERemote
 enum k_ERemoteStorageFilePathType_Absolute = ERemoteStorageFilePathType.k_ERemoteStorageFilePathType_Absolute; /// ditto
 enum k_ERemoteStorageFilePathType_APIFilename = ERemoteStorageFilePathType.k_ERemoteStorageFilePathType_APIFilename; /// ditto
 
-/// ELeaderboardDataRequest.
+/// ELeaderboardDataRequest (isteamuserstats.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUserStats
 enum ELeaderboardDataRequest : int
 {
     k_ELeaderboardDataRequestGlobal = 0,
@@ -1335,7 +1435,9 @@ enum k_ELeaderboardDataRequestGlobalAroundUser = ELeaderboardDataRequest.k_ELead
 enum k_ELeaderboardDataRequestFriends = ELeaderboardDataRequest.k_ELeaderboardDataRequestFriends; /// ditto
 enum k_ELeaderboardDataRequestUsers = ELeaderboardDataRequest.k_ELeaderboardDataRequestUsers; /// ditto
 
-/// ELeaderboardSortMethod.
+/// ELeaderboardSortMethod (isteamuserstats.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUserStats
 enum ELeaderboardSortMethod : int
 {
     k_ELeaderboardSortMethodNone = 0,
@@ -1347,7 +1449,9 @@ enum k_ELeaderboardSortMethodNone = ELeaderboardSortMethod.k_ELeaderboardSortMet
 enum k_ELeaderboardSortMethodAscending = ELeaderboardSortMethod.k_ELeaderboardSortMethodAscending; /// ditto
 enum k_ELeaderboardSortMethodDescending = ELeaderboardSortMethod.k_ELeaderboardSortMethodDescending; /// ditto
 
-/// ELeaderboardDisplayType.
+/// ELeaderboardDisplayType (isteamuserstats.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUserStats
 enum ELeaderboardDisplayType : int
 {
     k_ELeaderboardDisplayTypeNone = 0,
@@ -1361,7 +1465,9 @@ enum k_ELeaderboardDisplayTypeNumeric = ELeaderboardDisplayType.k_ELeaderboardDi
 enum k_ELeaderboardDisplayTypeTimeSeconds = ELeaderboardDisplayType.k_ELeaderboardDisplayTypeTimeSeconds; /// ditto
 enum k_ELeaderboardDisplayTypeTimeMilliSeconds = ELeaderboardDisplayType.k_ELeaderboardDisplayTypeTimeMilliSeconds; /// ditto
 
-/// ELeaderboardUploadScoreMethod.
+/// ELeaderboardUploadScoreMethod (isteamuserstats.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUserStats
 enum ELeaderboardUploadScoreMethod : int
 {
     k_ELeaderboardUploadScoreMethodNone = 0,
@@ -1374,7 +1480,9 @@ enum k_ELeaderboardUploadScoreMethodKeepBest = ELeaderboardUploadScoreMethod.k_E
 enum k_ELeaderboardUploadScoreMethodForceUpdate = ELeaderboardUploadScoreMethod
         .k_ELeaderboardUploadScoreMethodForceUpdate; /// ditto
 
-/// EP2PSessionError.
+/// EP2PSessionError (isteamnetworking.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamNetworking
 enum EP2PSessionError : int
 {
     k_EP2PSessionErrorNone = 0,
@@ -1393,7 +1501,9 @@ enum k_EP2PSessionErrorDestinationNotLoggedIn_DELETED = EP2PSessionError
         .k_EP2PSessionErrorDestinationNotLoggedIn_DELETED; /// ditto
 enum k_EP2PSessionErrorMax = EP2PSessionError.k_EP2PSessionErrorMax; /// ditto
 
-/// EP2PSend.
+/// EP2PSend (isteamnetworking.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamNetworking
 enum EP2PSend : int
 {
     k_EP2PSendUnreliable = 0,
@@ -1407,7 +1517,9 @@ enum k_EP2PSendUnreliableNoDelay = EP2PSend.k_EP2PSendUnreliableNoDelay; /// dit
 enum k_EP2PSendReliable = EP2PSend.k_EP2PSendReliable; /// ditto
 enum k_EP2PSendReliableWithBuffering = EP2PSend.k_EP2PSendReliableWithBuffering; /// ditto
 
-/// ESNetSocketState.
+/// ESNetSocketState (isteamnetworking.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamNetworking
 enum ESNetSocketState : int
 {
     k_ESNetSocketStateInvalid = 0,
@@ -1435,7 +1547,9 @@ enum k_ESNetSocketStateTimeoutDuringConnect = ESNetSocketState.k_ESNetSocketStat
 enum k_ESNetSocketStateRemoteEndDisconnected = ESNetSocketState.k_ESNetSocketStateRemoteEndDisconnected; /// ditto
 enum k_ESNetSocketStateConnectionBroken = ESNetSocketState.k_ESNetSocketStateConnectionBroken; /// ditto
 
-/// ESNetSocketConnectionType.
+/// ESNetSocketConnectionType (isteamnetworking.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamNetworking
 enum ESNetSocketConnectionType : int
 {
     k_ESNetSocketConnectionTypeNotConnected = 0,
@@ -1447,7 +1561,9 @@ enum k_ESNetSocketConnectionTypeNotConnected = ESNetSocketConnectionType.k_ESNet
 enum k_ESNetSocketConnectionTypeUDP = ESNetSocketConnectionType.k_ESNetSocketConnectionTypeUDP; /// ditto
 enum k_ESNetSocketConnectionTypeUDPRelay = ESNetSocketConnectionType.k_ESNetSocketConnectionTypeUDPRelay; /// ditto
 
-/// EVRScreenshotType.
+/// EVRScreenshotType (isteamscreenshots.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamScreenshots
 enum EVRScreenshotType : int
 {
     k_EVRScreenshotType_None = 0,
@@ -1465,7 +1581,9 @@ enum k_EVRScreenshotType_MonoCubemap = EVRScreenshotType.k_EVRScreenshotType_Mon
 enum k_EVRScreenshotType_MonoPanorama = EVRScreenshotType.k_EVRScreenshotType_MonoPanorama; /// ditto
 enum k_EVRScreenshotType_StereoPanorama = EVRScreenshotType.k_EVRScreenshotType_StereoPanorama; /// ditto
 
-/// AudioPlayback_Status.
+/// AudioPlayback_Status (isteammusic.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamMusic
 enum AudioPlayback_Status : int
 {
     AudioPlayback_Undefined = 0,
@@ -1479,7 +1597,7 @@ enum AudioPlayback_Playing = AudioPlayback_Status.AudioPlayback_Playing; /// dit
 enum AudioPlayback_Paused = AudioPlayback_Status.AudioPlayback_Paused; /// ditto
 enum AudioPlayback_Idle = AudioPlayback_Status.AudioPlayback_Idle; /// ditto
 
-/// EHTTPMethod.
+/// EHTTPMethod (steamhttpenums.h).
 enum EHTTPMethod : int
 {
     k_EHTTPMethodInvalid = 0,
@@ -1501,7 +1619,7 @@ enum k_EHTTPMethodDELETE = EHTTPMethod.k_EHTTPMethodDELETE; /// ditto
 enum k_EHTTPMethodOPTIONS = EHTTPMethod.k_EHTTPMethodOPTIONS; /// ditto
 enum k_EHTTPMethodPATCH = EHTTPMethod.k_EHTTPMethodPATCH; /// ditto
 
-/// EHTTPStatusCode.
+/// EHTTPStatusCode (steamhttpenums.h).
 enum EHTTPStatusCode : int
 {
     k_EHTTPStatusCodeInvalid = 0,
@@ -1629,7 +1747,9 @@ enum k_EHTTPStatusCode511NetworkAuthenticationRequired = EHTTPStatusCode
         .k_EHTTPStatusCode511NetworkAuthenticationRequired; /// ditto
 enum k_EHTTPStatusCode5xxUnknown = EHTTPStatusCode.k_EHTTPStatusCode5xxUnknown; /// ditto
 
-/// EInputSourceMode.
+/// EInputSourceMode (isteaminput.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamInput
 enum EInputSourceMode : int
 {
     k_EInputSourceMode_None = 0,
@@ -1669,7 +1789,9 @@ enum k_EInputSourceMode_RadialMenu = EInputSourceMode.k_EInputSourceMode_RadialM
 enum k_EInputSourceMode_SingleButton = EInputSourceMode.k_EInputSourceMode_SingleButton; /// ditto
 enum k_EInputSourceMode_Switches = EInputSourceMode.k_EInputSourceMode_Switches; /// ditto
 
-/// EInputActionOrigin.
+/// EInputActionOrigin (isteaminput.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamInput
 enum EInputActionOrigin : int
 {
     k_EInputActionOrigin_None = 0,
@@ -2764,7 +2886,9 @@ enum k_EInputActionOrigin_Generic_MISC8 = EInputActionOrigin.k_EInputActionOrigi
 enum k_EInputActionOrigin_Count = EInputActionOrigin.k_EInputActionOrigin_Count; /// ditto
 enum k_EInputActionOrigin_MaximumPossibleValue = EInputActionOrigin.k_EInputActionOrigin_MaximumPossibleValue; /// ditto
 
-/// EXboxOrigin.
+/// EXboxOrigin (isteamcontroller.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamController
 enum EXboxOrigin : int
 {
     k_EXboxOrigin_A = 0,
@@ -2828,7 +2952,9 @@ enum k_EXboxOrigin_DPad_West = EXboxOrigin.k_EXboxOrigin_DPad_West; /// ditto
 enum k_EXboxOrigin_DPad_East = EXboxOrigin.k_EXboxOrigin_DPad_East; /// ditto
 enum k_EXboxOrigin_Count = EXboxOrigin.k_EXboxOrigin_Count; /// ditto
 
-/// ESteamControllerPad.
+/// ESteamControllerPad (isteamcontroller.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamController
 enum ESteamControllerPad : int
 {
     k_ESteamControllerPad_Left = 0,
@@ -2838,7 +2964,9 @@ enum ESteamControllerPad : int
 enum k_ESteamControllerPad_Left = ESteamControllerPad.k_ESteamControllerPad_Left; /// ditto
 enum k_ESteamControllerPad_Right = ESteamControllerPad.k_ESteamControllerPad_Right; /// ditto
 
-/// EControllerHapticLocation.
+/// EControllerHapticLocation (isteaminput.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamInput
 enum EControllerHapticLocation : int
 {
     k_EControllerHapticLocation_Left = 1,
@@ -2850,7 +2978,9 @@ enum k_EControllerHapticLocation_Left = EControllerHapticLocation.k_EControllerH
 enum k_EControllerHapticLocation_Right = EControllerHapticLocation.k_EControllerHapticLocation_Right; /// ditto
 enum k_EControllerHapticLocation_Both = EControllerHapticLocation.k_EControllerHapticLocation_Both; /// ditto
 
-/// EControllerHapticType.
+/// EControllerHapticType (isteaminput.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamInput
 enum EControllerHapticType : int
 {
     k_EControllerHapticType_Off = 0,
@@ -2862,7 +2992,9 @@ enum k_EControllerHapticType_Off = EControllerHapticType.k_EControllerHapticType
 enum k_EControllerHapticType_Tick = EControllerHapticType.k_EControllerHapticType_Tick; /// ditto
 enum k_EControllerHapticType_Click = EControllerHapticType.k_EControllerHapticType_Click; /// ditto
 
-/// ESteamInputType.
+/// ESteamInputType (isteamcontroller.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamController
 enum ESteamInputType : int
 {
     k_ESteamInputType_Unknown = 0,
@@ -2902,7 +3034,9 @@ enum k_ESteamInputType_SteamDeckController = ESteamInputType.k_ESteamInputType_S
 enum k_ESteamInputType_Count = ESteamInputType.k_ESteamInputType_Count; /// ditto
 enum k_ESteamInputType_MaximumPossibleValue = ESteamInputType.k_ESteamInputType_MaximumPossibleValue; /// ditto
 
-/// ESteamInputConfigurationEnableType.
+/// ESteamInputConfigurationEnableType (isteaminput.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamInput
 enum ESteamInputConfigurationEnableType : int
 {
     k_ESteamInputConfigurationEnableType_None = 0,
@@ -2923,7 +3057,9 @@ enum k_ESteamInputConfigurationEnableType_Generic = ESteamInputConfigurationEnab
 enum k_ESteamInputConfigurationEnableType_Switch = ESteamInputConfigurationEnableType
         .k_ESteamInputConfigurationEnableType_Switch; /// ditto
 
-/// ESteamInputLEDFlag.
+/// ESteamInputLEDFlag (isteaminput.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamInput
 enum ESteamInputLEDFlag : int
 {
     k_ESteamInputLEDFlag_SetColor = 0,
@@ -2933,7 +3069,9 @@ enum ESteamInputLEDFlag : int
 enum k_ESteamInputLEDFlag_SetColor = ESteamInputLEDFlag.k_ESteamInputLEDFlag_SetColor; /// ditto
 enum k_ESteamInputLEDFlag_RestoreUserDefault = ESteamInputLEDFlag.k_ESteamInputLEDFlag_RestoreUserDefault; /// ditto
 
-/// ESteamInputGlyphSize.
+/// ESteamInputGlyphSize (isteaminput.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamInput
 enum ESteamInputGlyphSize : int
 {
     k_ESteamInputGlyphSize_Small = 0,
@@ -2947,7 +3085,9 @@ enum k_ESteamInputGlyphSize_Medium = ESteamInputGlyphSize.k_ESteamInputGlyphSize
 enum k_ESteamInputGlyphSize_Large = ESteamInputGlyphSize.k_ESteamInputGlyphSize_Large; /// ditto
 enum k_ESteamInputGlyphSize_Count = ESteamInputGlyphSize.k_ESteamInputGlyphSize_Count; /// ditto
 
-/// ESteamInputGlyphStyle.
+/// ESteamInputGlyphStyle (isteaminput.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamInput
 enum ESteamInputGlyphStyle : int
 {
     ESteamInputGlyphStyle_Knockout = 0,
@@ -2963,7 +3103,9 @@ enum ESteamInputGlyphStyle_Dark = ESteamInputGlyphStyle.ESteamInputGlyphStyle_Da
 enum ESteamInputGlyphStyle_NeutralColorABXY = ESteamInputGlyphStyle.ESteamInputGlyphStyle_NeutralColorABXY; /// ditto
 enum ESteamInputGlyphStyle_SolidABXY = ESteamInputGlyphStyle.ESteamInputGlyphStyle_SolidABXY; /// ditto
 
-/// ESteamInputActionEventType.
+/// ESteamInputActionEventType (isteaminput.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamInput
 enum ESteamInputActionEventType : int
 {
     ESteamInputActionEventType_DigitalAction = 0,
@@ -2973,7 +3115,9 @@ enum ESteamInputActionEventType : int
 enum ESteamInputActionEventType_DigitalAction = ESteamInputActionEventType.ESteamInputActionEventType_DigitalAction; /// ditto
 enum ESteamInputActionEventType_AnalogAction = ESteamInputActionEventType.ESteamInputActionEventType_AnalogAction; /// ditto
 
-/// EControllerActionOrigin.
+/// EControllerActionOrigin (isteamcontroller.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamController
 enum EControllerActionOrigin : int
 {
     k_EControllerActionOrigin_None = 0,
@@ -4243,7 +4387,9 @@ enum k_EControllerActionOrigin_Count = EControllerActionOrigin.k_EControllerActi
 enum k_EControllerActionOrigin_MaximumPossibleValue = EControllerActionOrigin
         .k_EControllerActionOrigin_MaximumPossibleValue; /// ditto
 
-/// ESteamControllerLEDFlag.
+/// ESteamControllerLEDFlag (isteamcontroller.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamController
 enum ESteamControllerLEDFlag : int
 {
     k_ESteamControllerLEDFlag_SetColor = 0,
@@ -4254,7 +4400,9 @@ enum k_ESteamControllerLEDFlag_SetColor = ESteamControllerLEDFlag.k_ESteamContro
 enum k_ESteamControllerLEDFlag_RestoreUserDefault = ESteamControllerLEDFlag
         .k_ESteamControllerLEDFlag_RestoreUserDefault; /// ditto
 
-/// EUGCMatchingUGCType.
+/// EUGCMatchingUGCType (isteamugc.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUGC
 enum EUGCMatchingUGCType : int
 {
     k_EUGCMatchingUGCType_Items = 0,
@@ -4288,7 +4436,9 @@ enum k_EUGCMatchingUGCType_ControllerBindings = EUGCMatchingUGCType.k_EUGCMatchi
 enum k_EUGCMatchingUGCType_GameManagedItems = EUGCMatchingUGCType.k_EUGCMatchingUGCType_GameManagedItems; /// ditto
 enum k_EUGCMatchingUGCType_All = EUGCMatchingUGCType.k_EUGCMatchingUGCType_All; /// ditto
 
-/// EUserUGCList.
+/// EUserUGCList (isteamugc.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUGC
 enum EUserUGCList : int
 {
     k_EUserUGCList_Published = 0,
@@ -4312,7 +4462,9 @@ enum k_EUserUGCList_Subscribed = EUserUGCList.k_EUserUGCList_Subscribed; /// dit
 enum k_EUserUGCList_UsedOrPlayed = EUserUGCList.k_EUserUGCList_UsedOrPlayed; /// ditto
 enum k_EUserUGCList_Followed = EUserUGCList.k_EUserUGCList_Followed; /// ditto
 
-/// EUserUGCListSortOrder.
+/// EUserUGCListSortOrder (isteamugc.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUGC
 enum EUserUGCListSortOrder : int
 {
     k_EUserUGCListSortOrder_CreationOrderDesc = 0,
@@ -4332,7 +4484,9 @@ enum k_EUserUGCListSortOrder_SubscriptionDateDesc = EUserUGCListSortOrder.k_EUse
 enum k_EUserUGCListSortOrder_VoteScoreDesc = EUserUGCListSortOrder.k_EUserUGCListSortOrder_VoteScoreDesc; /// ditto
 enum k_EUserUGCListSortOrder_ForModeration = EUserUGCListSortOrder.k_EUserUGCListSortOrder_ForModeration; /// ditto
 
-/// EUGCQuery.
+/// EUGCQuery (isteamugc.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUGC
 enum EUGCQuery : int
 {
     k_EUGCQuery_RankedByVote = 0,
@@ -4381,7 +4535,9 @@ enum k_EUGCQuery_RankedByPlaytimeSessionsTrend = EUGCQuery.k_EUGCQuery_RankedByP
 enum k_EUGCQuery_RankedByLifetimePlaytimeSessions = EUGCQuery.k_EUGCQuery_RankedByLifetimePlaytimeSessions; /// ditto
 enum k_EUGCQuery_RankedByLastUpdatedDate = EUGCQuery.k_EUGCQuery_RankedByLastUpdatedDate; /// ditto
 
-/// EItemUpdateStatus.
+/// EItemUpdateStatus (isteamugc.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUGC
 enum EItemUpdateStatus : int
 {
     k_EItemUpdateStatusInvalid = 0,
@@ -4399,7 +4555,9 @@ enum k_EItemUpdateStatusUploadingContent = EItemUpdateStatus.k_EItemUpdateStatus
 enum k_EItemUpdateStatusUploadingPreviewFile = EItemUpdateStatus.k_EItemUpdateStatusUploadingPreviewFile; /// ditto
 enum k_EItemUpdateStatusCommittingChanges = EItemUpdateStatus.k_EItemUpdateStatusCommittingChanges; /// ditto
 
-/// EItemState.
+/// EItemState (isteamugc.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUGC
 enum EItemState : int
 {
     k_EItemStateNone = 0,
@@ -4421,7 +4579,9 @@ enum k_EItemStateDownloading = EItemState.k_EItemStateDownloading; /// ditto
 enum k_EItemStateDownloadPending = EItemState.k_EItemStateDownloadPending; /// ditto
 enum k_EItemStateDisabledLocally = EItemState.k_EItemStateDisabledLocally; /// ditto
 
-/// EItemStatistic.
+/// EItemStatistic (isteamugc.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUGC
 enum EItemStatistic : int
 {
     k_EItemStatistic_NumSubscriptions = 0,
@@ -4455,7 +4615,9 @@ enum k_EItemStatistic_NumSecondsPlayedDuringTimePeriod = EItemStatistic
 enum k_EItemStatistic_NumPlaytimeSessionsDuringTimePeriod = EItemStatistic
         .k_EItemStatistic_NumPlaytimeSessionsDuringTimePeriod; /// ditto
 
-/// EItemPreviewType.
+/// EItemPreviewType (isteamugc.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUGC
 enum EItemPreviewType : int
 {
     k_EItemPreviewType_Image = 0,
@@ -4476,7 +4638,9 @@ enum k_EItemPreviewType_EnvironmentMap_LatLong = EItemPreviewType.k_EItemPreview
 enum k_EItemPreviewType_Clip = EItemPreviewType.k_EItemPreviewType_Clip; /// ditto
 enum k_EItemPreviewType_ReservedMax = EItemPreviewType.k_EItemPreviewType_ReservedMax; /// ditto
 
-/// EUGCContentDescriptorID.
+/// EUGCContentDescriptorID (isteamugc.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamUGC
 enum EUGCContentDescriptorID : int
 {
     k_EUGCContentDescriptor_NudityOrSexualContent = 1,
@@ -4496,7 +4660,9 @@ enum k_EUGCContentDescriptor_GratuitousSexualContent = EUGCContentDescriptorID
         .k_EUGCContentDescriptor_GratuitousSexualContent; /// ditto
 enum k_EUGCContentDescriptor_AnyMatureContent = EUGCContentDescriptorID.k_EUGCContentDescriptor_AnyMatureContent; /// ditto
 
-/// ESteamItemFlags.
+/// ESteamItemFlags (isteaminventory.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamInventory
 enum ESteamItemFlags : int
 {
     k_ESteamItemNoTrade = 1,
@@ -4508,7 +4674,9 @@ enum k_ESteamItemNoTrade = ESteamItemFlags.k_ESteamItemNoTrade; /// ditto
 enum k_ESteamItemRemoved = ESteamItemFlags.k_ESteamItemRemoved; /// ditto
 enum k_ESteamItemConsumed = ESteamItemFlags.k_ESteamItemConsumed; /// ditto
 
-/// ETimelineGameMode.
+/// ETimelineGameMode (isteamtimeline.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamTimeline
 enum ETimelineGameMode : int
 {
     k_ETimelineGameMode_Invalid = 0,
@@ -4526,7 +4694,9 @@ enum k_ETimelineGameMode_Menus = ETimelineGameMode.k_ETimelineGameMode_Menus; //
 enum k_ETimelineGameMode_LoadingScreen = ETimelineGameMode.k_ETimelineGameMode_LoadingScreen; /// ditto
 enum k_ETimelineGameMode_Max = ETimelineGameMode.k_ETimelineGameMode_Max; /// ditto
 
-/// ETimelineEventClipPriority.
+/// ETimelineEventClipPriority (isteamtimeline.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamTimeline
 enum ETimelineEventClipPriority : int
 {
     k_ETimelineEventClipPriority_Invalid = 0,
@@ -4540,7 +4710,9 @@ enum k_ETimelineEventClipPriority_None = ETimelineEventClipPriority.k_ETimelineE
 enum k_ETimelineEventClipPriority_Standard = ETimelineEventClipPriority.k_ETimelineEventClipPriority_Standard; /// ditto
 enum k_ETimelineEventClipPriority_Featured = ETimelineEventClipPriority.k_ETimelineEventClipPriority_Featured; /// ditto
 
-/// EParentalFeature.
+/// EParentalFeature (isteamparentalsettings.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamParentalSettings
 enum EParentalFeature : int
 {
     k_EFeatureInvalid = 0,
@@ -4582,7 +4754,9 @@ enum k_EFeatureBlockAlways = EParentalFeature.k_EFeatureBlockAlways; /// ditto
 enum k_EFeatureDesktop = EParentalFeature.k_EFeatureDesktop; /// ditto
 enum k_EFeatureMax = EParentalFeature.k_EFeatureMax; /// ditto
 
-/// ESteamDeviceFormFactor.
+/// ESteamDeviceFormFactor (isteamremoteplay.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamRemotePlay
 enum ESteamDeviceFormFactor : int
 {
     k_ESteamDeviceFormFactorUnknown = 0,
@@ -4600,7 +4774,9 @@ enum k_ESteamDeviceFormFactorComputer = ESteamDeviceFormFactor.k_ESteamDeviceFor
 enum k_ESteamDeviceFormFactorTV = ESteamDeviceFormFactor.k_ESteamDeviceFormFactorTV; /// ditto
 enum k_ESteamDeviceFormFactorVRHeadset = ESteamDeviceFormFactor.k_ESteamDeviceFormFactorVRHeadset; /// ditto
 
-/// ERemotePlayInputType.
+/// ERemotePlayInputType (isteamremoteplay.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamRemotePlay
 enum ERemotePlayInputType : int
 {
     k_ERemotePlayInputUnknown = 0,
@@ -4620,7 +4796,9 @@ enum k_ERemotePlayInputMouseWheel = ERemotePlayInputType.k_ERemotePlayInputMouse
 enum k_ERemotePlayInputKeyDown = ERemotePlayInputType.k_ERemotePlayInputKeyDown; /// ditto
 enum k_ERemotePlayInputKeyUp = ERemotePlayInputType.k_ERemotePlayInputKeyUp; /// ditto
 
-/// ERemotePlayMouseButton.
+/// ERemotePlayMouseButton (isteamremoteplay.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamRemotePlay
 enum ERemotePlayMouseButton : int
 {
     k_ERemotePlayMouseButtonLeft = 1,
@@ -4636,7 +4814,9 @@ enum k_ERemotePlayMouseButtonMiddle = ERemotePlayMouseButton.k_ERemotePlayMouseB
 enum k_ERemotePlayMouseButtonX1 = ERemotePlayMouseButton.k_ERemotePlayMouseButtonX1; /// ditto
 enum k_ERemotePlayMouseButtonX2 = ERemotePlayMouseButton.k_ERemotePlayMouseButtonX2; /// ditto
 
-/// ERemotePlayMouseWheelDirection.
+/// ERemotePlayMouseWheelDirection (isteamremoteplay.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamRemotePlay
 enum ERemotePlayMouseWheelDirection : int
 {
     k_ERemotePlayMouseWheelUp = 1,
@@ -4650,7 +4830,9 @@ enum k_ERemotePlayMouseWheelDown = ERemotePlayMouseWheelDirection.k_ERemotePlayM
 enum k_ERemotePlayMouseWheelLeft = ERemotePlayMouseWheelDirection.k_ERemotePlayMouseWheelLeft; /// ditto
 enum k_ERemotePlayMouseWheelRight = ERemotePlayMouseWheelDirection.k_ERemotePlayMouseWheelRight; /// ditto
 
-/// ERemotePlayScancode.
+/// ERemotePlayScancode (isteamremoteplay.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamRemotePlay
 enum ERemotePlayScancode : int
 {
     k_ERemotePlayScancodeUnknown = 0,
@@ -4856,7 +5038,9 @@ enum k_ERemotePlayScancodeRightShift = ERemotePlayScancode.k_ERemotePlayScancode
 enum k_ERemotePlayScancodeRightALT = ERemotePlayScancode.k_ERemotePlayScancodeRightALT; /// ditto
 enum k_ERemotePlayScancodeRightGUI = ERemotePlayScancode.k_ERemotePlayScancodeRightGUI; /// ditto
 
-/// ERemotePlayKeyModifier.
+/// ERemotePlayKeyModifier (isteamremoteplay.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/ISteamRemotePlay
 enum ERemotePlayKeyModifier : int
 {
     k_ERemotePlayKeyModifierNone = 0,
@@ -4886,7 +5070,9 @@ enum k_ERemotePlayKeyModifierNumLock = ERemotePlayKeyModifier.k_ERemotePlayKeyMo
 enum k_ERemotePlayKeyModifierCapsLock = ERemotePlayKeyModifier.k_ERemotePlayKeyModifierCapsLock; /// ditto
 enum k_ERemotePlayKeyModifierMask = ERemotePlayKeyModifier.k_ERemotePlayKeyModifierMask; /// ditto
 
-/// ESteamNetworkingAvailability.
+/// ESteamNetworkingAvailability (steamnetworkingtypes.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steamnetworkingtypes
 enum ESteamNetworkingAvailability : int
 {
     k_ESteamNetworkingAvailability_CannotTry = -102,
@@ -4913,7 +5099,9 @@ enum k_ESteamNetworkingAvailability_Unknown = ESteamNetworkingAvailability.k_ESt
 enum k_ESteamNetworkingAvailability__Force32bit = ESteamNetworkingAvailability
         .k_ESteamNetworkingAvailability__Force32bit; /// ditto
 
-/// ESteamNetworkingIdentityType.
+/// ESteamNetworkingIdentityType (steamnetworkingtypes.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steamnetworkingtypes
 enum ESteamNetworkingIdentityType : int
 {
     k_ESteamNetworkingIdentityType_Invalid = 0,
@@ -4942,7 +5130,9 @@ enum k_ESteamNetworkingIdentityType_UnknownType = ESteamNetworkingIdentityType
 enum k_ESteamNetworkingIdentityType__Force32bit = ESteamNetworkingIdentityType
         .k_ESteamNetworkingIdentityType__Force32bit; /// ditto
 
-/// ESteamNetworkingFakeIPType.
+/// ESteamNetworkingFakeIPType (steamnetworkingtypes.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steamnetworkingtypes
 enum ESteamNetworkingFakeIPType : int
 {
     k_ESteamNetworkingFakeIPType_Invalid = 0,
@@ -4958,7 +5148,9 @@ enum k_ESteamNetworkingFakeIPType_GlobalIPv4 = ESteamNetworkingFakeIPType.k_ESte
 enum k_ESteamNetworkingFakeIPType_LocalIPv4 = ESteamNetworkingFakeIPType.k_ESteamNetworkingFakeIPType_LocalIPv4; /// ditto
 enum k_ESteamNetworkingFakeIPType__Force32Bit = ESteamNetworkingFakeIPType.k_ESteamNetworkingFakeIPType__Force32Bit; /// ditto
 
-/// ESteamNetworkingConnectionState.
+/// ESteamNetworkingConnectionState (steamnetworkingtypes.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steamnetworkingtypes
 enum ESteamNetworkingConnectionState : int
 {
     k_ESteamNetworkingConnectionState_None = 0,
@@ -4992,7 +5184,9 @@ enum k_ESteamNetworkingConnectionState_Dead = ESteamNetworkingConnectionState.k_
 enum k_ESteamNetworkingConnectionState__Force32Bit = ESteamNetworkingConnectionState
         .k_ESteamNetworkingConnectionState__Force32Bit; /// ditto
 
-/// ESteamNetConnectionEnd.
+/// ESteamNetConnectionEnd (steamnetworkingtypes.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steamnetworkingtypes
 enum ESteamNetConnectionEnd : int
 {
     k_ESteamNetConnectionEnd_Invalid = 0,
@@ -5074,7 +5268,9 @@ enum k_ESteamNetConnectionEnd_Misc_PeerSentNoConnection = ESteamNetConnectionEnd
 enum k_ESteamNetConnectionEnd_Misc_Max = ESteamNetConnectionEnd.k_ESteamNetConnectionEnd_Misc_Max; /// ditto
 enum k_ESteamNetConnectionEnd__Force32Bit = ESteamNetConnectionEnd.k_ESteamNetConnectionEnd__Force32Bit; /// ditto
 
-/// ESteamNetworkingConfigScope.
+/// ESteamNetworkingConfigScope (steamnetworkingtypes.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steamnetworkingtypes
 enum ESteamNetworkingConfigScope : int
 {
     k_ESteamNetworkingConfig_Global = 1,
@@ -5090,7 +5286,9 @@ enum k_ESteamNetworkingConfig_ListenSocket = ESteamNetworkingConfigScope.k_EStea
 enum k_ESteamNetworkingConfig_Connection = ESteamNetworkingConfigScope.k_ESteamNetworkingConfig_Connection; /// ditto
 enum k_ESteamNetworkingConfigScope__Force32Bit = ESteamNetworkingConfigScope.k_ESteamNetworkingConfigScope__Force32Bit; /// ditto
 
-/// ESteamNetworkingConfigDataType.
+/// ESteamNetworkingConfigDataType (steamnetworkingtypes.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steamnetworkingtypes
 enum ESteamNetworkingConfigDataType : int
 {
     k_ESteamNetworkingConfig_Int32 = 1,
@@ -5109,7 +5307,9 @@ enum k_ESteamNetworkingConfig_Ptr = ESteamNetworkingConfigDataType.k_ESteamNetwo
 enum k_ESteamNetworkingConfigDataType__Force32Bit = ESteamNetworkingConfigDataType
         .k_ESteamNetworkingConfigDataType__Force32Bit; /// ditto
 
-/// ESteamNetworkingConfigValue.
+/// ESteamNetworkingConfigValue (steamnetworkingtypes.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steamnetworkingtypes
 enum ESteamNetworkingConfigValue : int
 {
     k_ESteamNetworkingConfig_Invalid = 0,
@@ -5331,7 +5531,9 @@ enum k_ESteamNetworkingConfig_DELETED_EnumerateDevVars = ESteamNetworkingConfigV
         .k_ESteamNetworkingConfig_DELETED_EnumerateDevVars; /// ditto
 enum k_ESteamNetworkingConfigValue__Force32Bit = ESteamNetworkingConfigValue.k_ESteamNetworkingConfigValue__Force32Bit; /// ditto
 
-/// ESteamNetworkingGetConfigValueResult.
+/// ESteamNetworkingGetConfigValueResult (steamnetworkingtypes.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steamnetworkingtypes
 enum ESteamNetworkingGetConfigValueResult : int
 {
     k_ESteamNetworkingGetConfigValue_BadValue = -1,
@@ -5354,7 +5556,9 @@ enum k_ESteamNetworkingGetConfigValue_OKInherited = ESteamNetworkingGetConfigVal
 enum k_ESteamNetworkingGetConfigValueResult__Force32Bit = ESteamNetworkingGetConfigValueResult
         .k_ESteamNetworkingGetConfigValueResult__Force32Bit; /// ditto
 
-/// ESteamNetworkingSocketsDebugOutputType.
+/// ESteamNetworkingSocketsDebugOutputType (steamnetworkingtypes.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steamnetworkingtypes
 enum ESteamNetworkingSocketsDebugOutputType : int
 {
     k_ESteamNetworkingSocketsDebugOutputType_None = 0,
@@ -5390,7 +5594,9 @@ enum k_ESteamNetworkingSocketsDebugOutputType_Everything = ESteamNetworkingSocke
 enum k_ESteamNetworkingSocketsDebugOutputType__Force32Bit = ESteamNetworkingSocketsDebugOutputType
         .k_ESteamNetworkingSocketsDebugOutputType__Force32Bit; /// ditto
 
-/// ESteamAPIInitResult.
+/// ESteamAPIInitResult (steam_api.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_api
 enum ESteamAPIInitResult : int
 {
     k_ESteamAPIInitResult_OK = 0,
@@ -5404,7 +5610,9 @@ enum k_ESteamAPIInitResult_FailedGeneric = ESteamAPIInitResult.k_ESteamAPIInitRe
 enum k_ESteamAPIInitResult_NoSteamClient = ESteamAPIInitResult.k_ESteamAPIInitResult_NoSteamClient; /// ditto
 enum k_ESteamAPIInitResult_VersionMismatch = ESteamAPIInitResult.k_ESteamAPIInitResult_VersionMismatch; /// ditto
 
-/// EServerMode.
+/// EServerMode (steam_gameserver.h).
+///
+/// See_Also: https://partner.steamgames.com/doc/api/steam_gameserver
 enum EServerMode : int
 {
     eServerModeInvalid = 0,

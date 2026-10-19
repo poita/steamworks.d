@@ -211,6 +211,10 @@ void scanHeader(string file, string text, ref HeaderInfo info)
         if (line.strip.length && line.strip[0] == '#')
             continue;
 
+        if (auto m = line.matchFirst(ctRegex!(`^\s*(?:typedef\s+)?enum\s+(\w+)`)))
+            if (m[1] !in info.headerOf)
+                info.headerOf[m[1]] = file;
+
         string opened;
         if (auto m = line.matchFirst(callbackBeginRe))
         {
@@ -336,6 +340,7 @@ VALVE_COMPILE_TIME_ASSERT( sizeof( C ) == 4 );
 VALVE_COMPILE_TIME_ASSERT( sizeof( C ) == 4 );
 #endif
 struct D { int z; };
+enum EThing { k_EThingA = 0 };
 #define STEAMX_INTERFACE_VERSION "SteamX001"
 `, info);
     assert(info.packOf["D"] == Pack.natural);
@@ -344,6 +349,7 @@ struct D { int z; };
     assert(info.packOf["B::Inner"] == Pack(1, false));
     assert(info.packOf["C"] == Pack.natural);
     assert(info.headerOf["C"] == "x.h");
+    assert(info.headerOf["EThing"] == "x.h");
     assert(info.versionMacros["STEAMX_INTERFACE_VERSION"] == "SteamX001");
 }
 
