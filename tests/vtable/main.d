@@ -9,6 +9,7 @@ import steamworks.raw.enums : EMatchMakingServerResponse;
 import steamworks.raw.interfaces;
 import steamworks.raw.structs : gameserveritem_t;
 import steamworks.raw.types : HServerListRequest;
+import steamworks.raw.steamid : CSteamID;
 import steamworks.steamid : accountID;
 import steamworks.strings : fromCString;
 
@@ -18,6 +19,7 @@ extern (C) nothrow
     void shim_ping(ISteamMatchmakingPingResponse response);
     void shim_players(ISteamMatchmakingPlayersResponse response);
     void shim_rules(ISteamMatchmakingRulesResponse response);
+    void shim_friends(ISteamMatchmakingServerFriendsResponse response);
 }
 
 private int failures;
@@ -81,7 +83,7 @@ int main()
                 && complete == EMatchMakingServerResponse.eNoServersListedOnMasterServer, "ServerListResponse");
     }
     {
-        int ping, players;
+        int ping, players, friendsNow, friendsEver;
         uint account;
         const(char)[] name;
         bool failed;
@@ -90,9 +92,12 @@ int main()
             players = s.m_nPlayers;
             name = fromCString(s.m_szServerName).dup;
             account = s.m_steamID.accountID;
+            friendsNow = s.m_nCurrentFriendCount;
+            friendsEver = s.m_nTotalFriendCount;
         }, () nothrow{ failed = true; });
         shim_ping(response);
         check(ping == 33 && players == 5 && name == "shim server" && account == 22_202 && failed, "PingResponse");
+        check(friendsNow == 2 && friendsEver == 9, "gameserveritem_t friend counts");
     }
     {
         string log;
@@ -111,6 +116,14 @@ int main()
         }, () nothrow{ log ~= "failed;"; }, () nothrow{ log ~= "complete;"; });
         shim_rules(response);
         check(log == "mp_timelimit=30;failed;complete;", "RulesResponse");
+    }
+    {
+        string log;
+        auto response = new ServerFriendsResponse((CSteamID id, const(char)[] name, bool now) nothrow{
+            log ~= name ~ (now ? "+" : "-") ~ (id.accountID == 22_202 || id.accountID == 22_203 ? ";" : "?;");
+        }, () nothrow{ log ~= "failed;"; }, () nothrow{ log ~= "complete;"; });
+        shim_friends(response);
+        check(log == "carol+;dave-;failed;complete;", "ServerFriendsResponse");
     }
     return failures ? 1 : 0;
 }

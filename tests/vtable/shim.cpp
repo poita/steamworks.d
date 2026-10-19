@@ -22,6 +22,8 @@ void shim_ping(ISteamMatchmakingPingResponse *response)
     item.m_nPlayers = 5;
     item.SetName("shim server");
     item.m_steamID = CSteamID(uint64(76561197960287930ULL));
+    item.m_nCurrentFriendCount = 2;
+    item.m_nTotalFriendCount = 9;
     response->ServerResponded(item);
     response->ServerFailedToRespond();
 }
@@ -39,6 +41,14 @@ void shim_rules(ISteamMatchmakingRulesResponse *response)
     response->RulesResponded("mp_timelimit", "30");
     response->RulesFailedToRespond();
     response->RulesRefreshComplete();
+}
+
+void shim_friends(ISteamMatchmakingServerFriendsResponse *response)
+{
+    response->AddFriendToList(CSteamID(uint64(76561197960287930ULL)), "carol", true);
+    response->AddFriendToList(CSteamID(uint64(76561197960287931ULL)), "dave", false);
+    response->FriendsFailedToRespond();
+    response->FriendsRefreshComplete();
 }
 
 }

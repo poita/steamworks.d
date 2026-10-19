@@ -32,7 +32,8 @@ module steamworks.matchmaking;
 
 import steamworks.raw.enums : EMatchMakingServerResponse;
 import steamworks.raw.interfaces : ISteamMatchmakingPingResponse, ISteamMatchmakingPlayersResponse,
-    ISteamMatchmakingRulesResponse, ISteamMatchmakingServerListResponse;
+    ISteamMatchmakingRulesResponse, ISteamMatchmakingServerFriendsResponse, ISteamMatchmakingServerListResponse;
+import steamworks.raw.steamid : CSteamID;
 import steamworks.raw.structs : gameserveritem_t;
 import steamworks.raw.types : HServerListRequest;
 import steamworks.strings : fromCString;
@@ -50,6 +51,8 @@ alias PingServerHandler = void delegate(ref const gameserveritem_t server) nothr
 alias PlayerHandler = void delegate(const(char)[] name, int score, float timePlayed) nothrow;
 /// Handler for one rule reported by `ServerRules`.
 alias RuleHandler = void delegate(const(char)[] rule, const(char)[] value) nothrow;
+/// Handler for one friend reported by `ServerFriends`.
+alias ServerFriendHandler = void delegate(CSteamID steamID, const(char)[] name, bool currentlyConnected) nothrow;
 /// Handler for an event without data (a failure or a completion).
 alias MatchmakingEventHandler = void delegate() nothrow;
 
@@ -212,6 +215,49 @@ extern (C++) final class RulesResponse : ISteamMatchmakingRulesResponse
     }
 }
 
+/// Receives the friends who have played on a server, requested with
+/// `ServerFriends`.
+extern (C++) final class ServerFriendsResponse : ISteamMatchmakingServerFriendsResponse
+{
+    /// One friend: `name` is borrowed from Steam and valid only during the
+    /// call; `currentlyConnected` tells whether the friend is on the server now.
+    ServerFriendHandler onAddFriend;
+    /// The server did not answer.
+    MatchmakingEventHandler onFriendsFailedToRespond;
+    /// Every friend has been reported.
+    MatchmakingEventHandler onFriendsRefreshComplete;
+
+    /// Creates a response with the given handlers (each may be null).
+    extern (D) this(typeof(onAddFriend) addFriend = null, typeof(onFriendsFailedToRespond) friendsFailedToRespond = null,
+            typeof(onFriendsRefreshComplete) friendsRefreshComplete = null) nothrow @nogc @safe
+    {
+        onAddFriend = addFriend;
+        onFriendsFailedToRespond = friendsFailedToRespond;
+        onFriendsRefreshComplete = friendsRefreshComplete;
+    }
+
+    /// Forwards to `onAddFriend`.
+    override void AddFriendToList(CSteamID steamID, const(char)* pchName, bool bCurrentlyConnected) nothrow
+    {
+        if (onAddFriend)
+            onAddFriend(steamID, fromCString(pchName), bCurrentlyConnected);
+    }
+
+    /// Forwards to `onFriendsFailedToRespond`.
+    override void FriendsFailedToRespond() nothrow
+    {
+        if (onFriendsFailedToRespond)
+            onFriendsFailedToRespond();
+    }
+
+    /// Forwards to `onFriendsRefreshComplete`.
+    override void FriendsRefreshComplete() nothrow
+    {
+        if (onFriendsRefreshComplete)
+            onFriendsRefreshComplete();
+    }
+}
+
 /// Calls through the interface types, as Steam does.
 unittest
 {
@@ -293,4 +339,30 @@ unittest
     base.RulesResponded("empty", null);
     base.RulesRefreshComplete();
     assert(seen == ["mp_timelimit=30", "empty="] && done);
+}
+
+unittest
+{
+    CSteamID[] ids;
+    string[] names;
+    bool[] connected;
+    bool failed, done;
+    ISteamMatchmakingServerFriendsResponse response = new ServerFriendsResponse((CSteamID id,
+            const(char)[] name, bool now) nothrow{ ids ~= id; names ~= name.idup; connected ~= now; }, () nothrow{
+        failed = true;
+    }, () nothrow{ done = true; });
+    response.AddFriendToList(CSteamID(76_561_197_960_287_930UL), "bob", true);
+    response.AddFriendToList(CSteamID(76_561_197_960_287_931UL), null, false);
+    response.FriendsFailedToRespond();
+    response.FriendsRefreshComplete();
+    assert(ids == [CSteamID(76_561_197_960_287_930UL), CSteamID(76_561_197_960_287_931UL)]);
+    assert(names == ["bob", ""] && connected == [true, false] && failed && done);
+}
+
+unittest
+{
+    ISteamMatchmakingServerFriendsResponse friends = new ServerFriendsResponse;
+    friends.AddFriendToList(CSteamID(1), "x", true);
+    friends.FriendsFailedToRespond();
+    friends.FriendsRefreshComplete();
 }
