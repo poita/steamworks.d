@@ -102,7 +102,7 @@ version (SteamworksDynamic)
         /// SteamAPI_SetBreakpadAppID (steam_api.h). Sets the app ID reported by the Breakpad crash handler.
         PFN_SteamAPI_SetBreakpadAppID SteamAPI_SetBreakpadAppID;
 
-        /// SteamAPI_ManualDispatch_Init (steam_api.h). Switches to manual callback dispatch. Call once, before SteamAPI_Init.
+        /// SteamAPI_ManualDispatch_Init (steam_api.h). Switches to manual callback dispatch. Call after SteamAPI_Init (or SteamGameServer_Init) succeeds and before the other manual dispatch functions.
         PFN_SteamAPI_ManualDispatch_Init SteamAPI_ManualDispatch_Init;
 
         /// SteamAPI_ManualDispatch_RunFrame (steam_api.h). Performs per-frame work for manual dispatch.
@@ -204,7 +204,7 @@ else
         /// SteamAPI_SetBreakpadAppID (steam_api.h). Sets the app ID reported by the Breakpad crash handler.
         void SteamAPI_SetBreakpadAppID(uint32 unAppID);
 
-        /// SteamAPI_ManualDispatch_Init (steam_api.h). Switches to manual callback dispatch. Call once, before SteamAPI_Init.
+        /// SteamAPI_ManualDispatch_Init (steam_api.h). Switches to manual callback dispatch. Call after SteamAPI_Init (or SteamGameServer_Init) succeeds and before the other manual dispatch functions.
         void SteamAPI_ManualDispatch_Init();
 
         /// SteamAPI_ManualDispatch_RunFrame (steam_api.h). Performs per-frame work for manual dispatch.
