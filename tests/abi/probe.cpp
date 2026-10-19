@@ -5179,3 +5179,5 @@ extern "C" const long long steamworks_layout[] = {
     (long long)((long long)(sizeof(ValvePackingSentinel_t) == 24 ? 4 : 8)), // VALVE_CALLBACK_PACK
     1364716109LL
 };
+extern "C" const unsigned long long steamworks_layout_count =
+    sizeof(steamworks_layout) / sizeof(steamworks_layout[0]);

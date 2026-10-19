@@ -199,6 +199,8 @@ CPP";
     foreach (ref e; es)
         o ~= "    (long long)(" ~ e.cpp ~ "), // " ~ e.key ~ "\n";
     o ~= format!"    %sLL\n};\n"(sentinel);
+    o ~= "extern \"C\" const unsigned long long steamworks_layout_count =\n"
+        ~ "    sizeof(steamworks_layout) / sizeof(steamworks_layout[0]);\n";
     return o;
 }
 
@@ -355,6 +357,7 @@ unittest
     assert(cpp.canFind("static_assert(sw_same<decltype(&SteamAPI_ISteamX_Find), "
             ~ "SteamAPICall_t (*)(ISteamX *, uint64_steamid)>::value"));
     assert(cpp.canFind("1364716109LL\n};"));
+    assert(cpp.canFind("steamworks_layout_count"));
 }
 
 unittest
