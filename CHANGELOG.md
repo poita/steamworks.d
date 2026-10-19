@@ -17,15 +17,18 @@ it removes or changes existing declarations).
 - Callback struct packing for every platform (`VALVE_CALLBACK_PACK` 4 on Linux, macOS and
   Android, 8 on Windows), zero-initialized structs, `CSteamID`/`CGameID` with their C++ inline
   members, the header-inline functions (`SteamAPI_InitEx`, `SteamGameServer_InitEx`,
-  `SteamClient`, ...), and `extern (C++)` classes for the C++ callback interfaces
+  `SteamClient`, the POP ID conversions, ...), `c_char` for C's by-value `char` with the
+  target's signedness, and `extern (C++)` classes for the C++ callback interfaces
   (`ISteamMatchmaking*Response`, `CCallbackBase`, the networking signaling interfaces).
 - `SteamCallResult` and `SteamCallback` attributes on every asynchronous function.
 - Two dub configurations: `dynamic` (default; `loadSteamworks()` binds the library at run time)
   and `linked`.
 - A D layer: `steamInit`/`steamGameServerInit` with Steam's error message, the C++-named
-  interface accessors, `CallbackDispatcher` and `NogcCallbackDispatcher` for callbacks and call
-  results over manual dispatch, delegate-based server browser responses, Steam ID rendering and
-  parsing, network address and identity text conversions, and C string helpers.
+  interface accessors (null while the library is missing), `CallbackDispatcher` and
+  `NogcCallbackDispatcher` for callbacks and call results over manual dispatch (`@safe` with
+  `@safe` handlers, and safe to tear down from a handler), delegate-based server browser
+  responses, Steam ID rendering and parsing, network address and identity text conversions, and
+  C string helpers.
 - The generator (`tools/gen`) with its documented overrides, and the ABI verification against the
   SDK headers and libraries for macOS, Windows, Linux and Android (`tools/check-abi.sh`).
 - Examples: `dispatcher`, `manual-dispatch`, `achievements`, `matchmaking`, `networking` and
