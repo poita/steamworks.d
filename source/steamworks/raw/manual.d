@@ -415,8 +415,9 @@ struct SteamNetworkingConfigValue_t
     /// Which value is being set.
     ESteamNetworkingConfigValue m_eValue;
 
-    /// Which member of `m_val` is valid.
-    ESteamNetworkingConfigDataType m_eDataType;
+    /// Which member of `m_val` is valid. Zero (not the first enumerator) by
+    /// default, as in C++.
+    ESteamNetworkingConfigDataType m_eDataType = cast(ESteamNetworkingConfigDataType) 0;
 
     /// The C++ anonymous union type of `m_val`.
     union Value
