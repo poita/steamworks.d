@@ -26,15 +26,14 @@ int main(string[] args)
     bool check;
     bool abi;
 
-    auto help = getopt(args,
-            "sdk", "Steamworks SDK directory containing public/steam (default: sdk)", &sdk,
-            "overrides", "Overrides file (default: tools/gen/overrides.json)", &overrides,
+    auto help = getopt(args, "sdk", "Steamworks SDK directory containing public/steam (default: sdk)",
+            &sdk, "overrides", "Overrides file (default: tools/gen/overrides.json)", &overrides,
             "out", "Repository root to write into (default: .)", &outDir,
             "sdk-version", "SDK version recorded in the banner (default: 1.65)", &sdkVersion,
-            "dfmt", "Format generated D with this dfmt executable", &dfmt,
-            "check", "Compare instead of writing; exit 1 if anything is stale", &check,
-            "abi", "Also run the clang ABI probe and regenerate tests/abi", &abi,
-            "clang", "clang++ used by --abi (default: clang++)", &clang);
+            "dfmt", "Format generated D with this dfmt executable", &dfmt, "check",
+            "Compare instead of writing; exit 1 if anything is stale",
+            &check, "abi", "Also run the clang ABI probe and regenerate tests/abi",
+            &abi, "clang", "clang++ used by --abi (default: clang++)", &clang);
     if (help.helpWanted)
     {
         defaultGetoptPrinter("Usage: steamworks-gen [options]", help.options);
@@ -86,9 +85,9 @@ int main(string[] args)
         return 1;
     }
     size_t fns = model.allFunctions.length;
-    writefln("%s functions, %s structs, %s callbacks, %s enums, %s constants, %s typedefs, %s interfaces",
-            fns, model.structs.length, model.callbacks.length, model.enums.length,
-            model.consts.length, model.typedefs.length, model.interfaces.length);
+    writefln("%s functions, %s structs, %s callbacks, %s enums, %s constants, %s typedefs, %s interfaces", fns,
+            model.structs.length, model.callbacks.length, model.enums.length, model.consts.length,
+            model.typedefs.length, model.interfaces.length);
     return 0;
 }
 

@@ -2,9 +2,7 @@
 /// exhaustive per-platform layout checks live in tests/abi.
 module steamworks.raw.tests;
 
-version (unittest):
-
-import std.traits : getUDAs, hasUDA;
+version (unittest)  : import std.traits : getUDAs, hasUDA;
 
 import steamworks.loader : isSteamworksLoaded;
 import steamworks.raw;
@@ -85,7 +83,7 @@ unittest
     size_t count;
     static foreach (name; moduleMembers!(steamworks.raw.callbacks))
         static if (isStructIn!(steamworks.raw.callbacks, name))
-        {
+            {
             {
                 enum id = __traits(getMember, steamworks.raw.callbacks, name).k_iCallback;
                 if (auto other = id in seen)
@@ -102,9 +100,9 @@ unittest
 unittest
 {
     static foreach (mod; [
-            "steamworks.raw.callbacks", "steamworks.raw.structs", "steamworks.raw.manual",
-            "steamworks.raw.steamid"
-        ])
+        "steamworks.raw.callbacks", "steamworks.raw.structs", "steamworks.raw.manual",
+        "steamworks.raw.steamid"
+    ])
         static foreach (name; moduleMembers!(mixin(mod)))
             static if (isStructIn!(mixin(mod), name))
                 static assert(__traits(isZeroInit, __traits(getMember, mixin(mod), name)), name);
@@ -148,8 +146,7 @@ unittest
     static assert(intp.sizeof == (void*).sizeof && uintp.sizeof == (void*).sizeof);
     static assert(SteamErrMsg.sizeof == 1024 && SteamNetworkingErrMsg.sizeof == 1024);
     static assert(is(ControllerAnalogActionData_t == InputAnalogActionData_t));
-    version (Windows)
-        static assert(lint64.sizeof == 8);
+    version (Windows) static assert(lint64.sizeof == 8);
 }
 
 /// Interface version strings.
@@ -166,9 +163,21 @@ unittest
     static assert(is(typeof(&SteamAPI_SteamUser) == ISteamUser* function() nothrow @nogc));
     static assert(is(typeof(SteamAPI_ISteamUser_GetSteamID(null)) == uint64_steamid));
     static assert(is(typeof(SteamAPI_ISteamFriends_GetPersonaName(null)) == const(char)*));
-    ISteamNetworkingSockets* sockets;
+    ISteamNetworkingSockets* sockets = null;
     SteamNetworkingIPAddr addr;
+    addr.Clear();
     static assert(__traits(compiles, SteamAPI_ISteamNetworkingSockets_CreateListenSocketIP(sockets, addr, 0, null)));
+}
+
+/// SteamNetworkingIdentity's inline generic-bytes accessors.
+@system unittest
+{
+    SteamNetworkingIdentity id;
+    immutable ubyte[3] bytes = [1, 2, 3];
+    assert(id.SetGenericBytes(bytes.ptr, bytes.length));
+    int n = -1;
+    const p = id.GetGenericBytes(n);
+    assert(n == 3 && p[0 .. 3] == bytes);
 }
 
 /// Asynchronous functions carry their call-result struct as a UDA.

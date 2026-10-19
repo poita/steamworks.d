@@ -9,9 +9,8 @@ module steamworks.raw.manual;
 import steamworks.raw.enums;
 import steamworks.raw.platform : callbackAlign;
 import steamworks.raw.steamid : CSteamID;
-import steamworks.raw.structs : InputAnalogActionData_t, InputDigitalActionData_t,
-    RemotePlayInputKey_t, RemotePlayInputMouseMotion_t, RemotePlayInputMouseWheel_t,
-    SteamNetConnectionInfo_t;
+import steamworks.raw.structs : InputAnalogActionData_t, InputDigitalActionData_t, RemotePlayInputKey_t,
+    RemotePlayInputMouseMotion_t, RemotePlayInputMouseWheel_t, SteamNetConnectionInfo_t;
 import steamworks.raw.types;
 
 // ---------------------------------------------------------------------------
@@ -164,8 +163,8 @@ align(1):
     {
         if (!IsIPv4())
             return 0;
-        return (uint(m_ipv4.m_ip[0]) << 24) | (uint(m_ipv4.m_ip[1]) << 16) | (uint(m_ipv4.m_ip[2]) << 8)
-            | uint(m_ipv4.m_ip[3]);
+        return (uint(m_ipv4.m_ip[0]) << 24) | (uint(m_ipv4.m_ip[1]) << 16) | (
+                uint(m_ipv4.m_ip[2]) << 8) | uint(m_ipv4.m_ip[3]);
     }
 
     /// Sets `::1` and the port.
@@ -192,6 +191,15 @@ align(1):
     bool opEquals(const ref SteamNetworkingIPAddr x) const @safe pure nothrow @nogc
     {
         return m_ipv6 == x.m_ipv6 && m_port == x.m_port;
+    }
+
+    /// Hash consistent with `opEquals`.
+    size_t toHash() const @safe pure nothrow @nogc
+    {
+        size_t h = m_port;
+        foreach (b; m_ipv6)
+            h = h * 31 + b;
+        return h;
     }
 }
 
@@ -395,8 +403,23 @@ align(1):
     {
         if (m_eType != x.m_eType || m_cbSize != x.m_cbSize)
             return false;
+        return payload == x.payload;
+    }
+
+    /// Hash consistent with `opEquals`.
+    size_t toHash() const @safe pure nothrow @nogc
+    {
+        size_t h = m_eType * 31 + m_cbSize;
+        foreach (b; payload)
+            h = h * 31 + b;
+        return h;
+    }
+
+    /// The `m_cbSize` meaningful bytes of the union.
+    private const(ubyte)[] payload() const return @trusted pure nothrow @nogc
+    {
         const n = m_cbSize < 0 ? 0 : m_cbSize > m_reserved.sizeof ? m_reserved.sizeof : m_cbSize;
-        return (cast(const(ubyte)*) m_reserved.ptr)[0 .. n] == (cast(const(ubyte)*) x.m_reserved.ptr)[0 .. n];
+        return (cast(const(ubyte)*) m_reserved.ptr)[0 .. n];
     }
 }
 
@@ -731,8 +754,7 @@ extern (C++) abstract class ISteamNetworkingSignalingRecvContext
             ref const(SteamNetworkingIdentity) identityPeer, int nLocalVirtualPort) nothrow;
 
     /// Sends a rejection signal to a peer.
-    abstract void SendRejectionSignal(ref const(SteamNetworkingIdentity) identityPeer,
-            const(void)* pMsg, int cbMsg) nothrow;
+    abstract void SendRejectionSignal(ref const(SteamNetworkingIdentity) identityPeer, const(void)* pMsg, int cbMsg) nothrow;
 }
 
 // ---------------------------------------------------------------------------
@@ -803,16 +825,6 @@ unittest
     assert(!a.SetGenericString("this string is far too long for a generic identity"));
     b.SetLocalHost();
     assert(a != b && b.IsLocalHost());
-}
-
-@system pure nothrow @nogc unittest
-{
-    SteamNetworkingIdentity id;
-    immutable ubyte[3] bytes = [1, 2, 3];
-    assert(id.SetGenericBytes(bytes.ptr, bytes.length));
-    int n;
-    const p = id.GetGenericBytes(n);
-    assert(n == 3 && p[0 .. 3] == bytes);
 }
 
 @safe pure nothrow @nogc unittest

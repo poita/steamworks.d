@@ -47,20 +47,20 @@ int main()
     check(m.rotQuatX == 100.0f && m.rotVelZ == 102.25f, "40-byte struct return");
 
     const ip = SteamAPI_ISteamGameServer_GetPublicIP(null);
-    check(ip.m_eType == ESteamIPType.k_ESteamIPTypeIPv6 && ip.m_rgubIPv6[0] == 1 && ip.m_rgubIPv6[15] == 46,
-            "20-byte packed struct return");
+    check(ip.m_eType == ESteamIPType.k_ESteamIPTypeIPv6 && ip.m_rgubIPv6[0] == 1
+            && ip.m_rgubIPv6[15] == 46, "20-byte packed struct return");
 
     SteamIPAddress_t v4 = SteamIPAddress_t.IPv4Loopback();
-    check(SteamAPI_ISteamNetworking_CreateListenSocket(null, 5, v4, 0x1234, true) == (0x7f00_0001 ^ (0x1234 << 8) ^ 5),
-            "20-byte packed struct parameter");
+    check(SteamAPI_ISteamNetworking_CreateListenSocket(null, 5, v4, 0x1234,
+            true) == (0x7f00_0001 ^ (0x1234 << 8) ^ 5), "20-byte packed struct parameter");
 
     SteamPartyBeaconLocation_t loc;
     loc.m_eType = ESteamPartyBeaconLocationType.k_ESteamPartyBeaconLocationType_ChatGroup;
     loc.m_ulLocationID = 0xabcdef0123456789UL;
     char[4] buf = 0;
     check(SteamAPI_ISteamParties_GetBeaconLocationData(null, loc,
-            ESteamPartyBeaconLocationData.k_ESteamPartyBeaconLocationDataIconURLLarge, buf.ptr, buf.length),
-            "callback-packed struct parameter");
+            ESteamPartyBeaconLocationData.k_ESteamPartyBeaconLocationDataIconURLLarge,
+            buf.ptr, buf.length), "callback-packed struct parameter");
     check(buf[0] == 'A' + 1, "callback-packed struct parameter (enum)");
 
     check(SteamAPI_ISteamUserStats_UpdateAvgRateStat(null, "rate", 2.5f, 7.25), "string, float and double arguments");
@@ -72,8 +72,9 @@ int main()
     float f = 0;
     check(SteamAPI_ISteamUserStats_GetStatFloat(null, "x", &f) && f == 0.125f, "float out parameter");
 
-    check(SteamAPI_ISteamUser_BeginAuthSession(null, null, -5, 76_561_197_960_287_930UL)
-            == EBeginAuthSessionResult.k_EBeginAuthSessionResultExpiredTicket, "uint64 argument and enum return");
+    check(SteamAPI_ISteamUser_BeginAuthSession(null, null, -5,
+            76_561_197_960_287_930UL) == EBeginAuthSessionResult.k_EBeginAuthSessionResultExpiredTicket,
+            "uint64 argument and enum return");
 
     SteamNetworkPingLocation_t l1, l2;
     l1.m_data[0] = 50;

@@ -1109,7 +1109,8 @@ immutable string[] steamworksUnboundExports = [
 /// `steamworksFunctionNames` order. With the dynamic loader an address is `null`
 /// until bound; when linked, referencing every function makes the linker check
 /// that the library provides all of them.
-void steamworksForEachFunction(scope void delegate(string name, void* address) nothrow @nogc dg) nothrow @nogc
+void steamworksForEachFunction(scope void delegate(string name, void* address) nothrow @nogc dg)
+    nothrow @nogc
 {
     version (SteamworksDynamic)
     {

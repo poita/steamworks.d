@@ -19,20 +19,17 @@ alias Output = string[string];
 
 /// Words D reserves that may appear as C identifiers.
 private immutable string[] dKeywords = [
-    "abstract", "alias", "align", "asm", "assert", "auto", "body", "bool",
-    "break", "byte", "case", "cast", "catch", "cdouble", "cent", "cfloat",
-    "char", "class", "const", "continue", "creal", "dchar", "debug", "default",
-    "delegate", "delete", "deprecated", "do", "double", "else", "enum",
-    "export", "extern", "false", "final", "finally", "float", "for", "foreach",
-    "foreach_reverse", "function", "goto", "idouble", "if", "ifloat",
-    "immutable", "import", "in", "inout", "int", "interface", "invariant",
-    "ireal", "is", "lazy", "long", "macro", "mixin", "module", "new",
-    "nothrow", "null", "out", "override", "package", "pragma", "private",
-    "protected", "public", "pure", "real", "ref", "return", "scope", "shared",
-    "short", "static", "struct", "super", "switch", "synchronized", "template",
-    "this", "throw", "true", "try", "typeid", "typeof", "ubyte", "ucent",
-    "uint", "ulong", "union", "unittest", "ushort", "version", "void", "wchar",
-    "while", "with"
+    "abstract", "alias", "align", "asm", "assert", "auto", "body", "bool", "break", "byte", "case",
+    "cast", "catch", "cdouble", "cent", "cfloat", "char", "class", "const", "continue", "creal",
+    "dchar", "debug", "default", "delegate", "delete", "deprecated", "do", "double", "else",
+    "enum", "export", "extern", "false", "final", "finally", "float", "for", "foreach",
+    "foreach_reverse", "function", "goto", "idouble", "if", "ifloat", "immutable", "import",
+    "in", "inout", "int", "interface", "invariant", "ireal", "is", "lazy", "long", "macro",
+    "mixin", "module", "new", "nothrow", "null", "out", "override", "package", "pragma", "private",
+    "protected", "public", "pure", "real", "ref", "return", "scope", "shared", "short", "static",
+    "struct", "super", "switch", "synchronized", "template", "this", "throw", "true", "try",
+    "typeid", "typeof", "ubyte", "ucent", "uint", "ulong", "union", "unittest", "ushort",
+    "version", "void", "wchar", "while", "with"
 ];
 
 /// Escapes a C identifier that is a D keyword by appending `_`.
@@ -94,9 +91,8 @@ string banner(string sdkVersion) @safe pure
 /// Imports shared by the generated modules.
 private immutable string[] typeModules = [
     "steamworks.raw.callbacks", "steamworks.raw.consts", "steamworks.raw.enums",
-    "steamworks.raw.interfaces", "steamworks.raw.manual",
-    "steamworks.raw.platform", "steamworks.raw.steamid", "steamworks.raw.structs",
-    "steamworks.raw.types",
+    "steamworks.raw.interfaces", "steamworks.raw.manual", "steamworks.raw.platform",
+    "steamworks.raw.steamid", "steamworks.raw.structs", "steamworks.raw.types",
 ];
 
 private void imports(ref Code c, string self, string[] extra = null)
@@ -114,8 +110,7 @@ string docPage(string header) @safe pure
     static immutable string[string] pages = [
         "isteamapps.h": "ISteamApps", "isteamclient.h": "ISteamClient",
         "isteamcontroller.h": "ISteamController", "isteamfriends.h": "ISteamFriends",
-        "isteamgameserver.h": "ISteamGameServer",
-        "isteamgameserverstats.h": "ISteamGameServerStats",
+        "isteamgameserver.h": "ISteamGameServer", "isteamgameserverstats.h": "ISteamGameServerStats",
         "isteamhtmlsurface.h": "ISteamHTMLSurface", "isteamhttp.h": "ISteamHTTP",
         "isteaminput.h": "ISteamInput", "isteaminventory.h": "ISteamInventory",
         "isteammatchmaking.h": "ISteamMatchmaking", "isteammusic.h": "ISteamMusic",
@@ -124,15 +119,13 @@ string docPage(string header) @safe pure
         "isteamnetworkingsockets.h": "ISteamNetworkingSockets",
         "isteamnetworkingutils.h": "ISteamNetworkingUtils",
         "isteamparentalsettings.h": "ISteamParentalSettings",
-        "isteamremoteplay.h": "ISteamRemotePlay",
-        "isteamremotestorage.h": "ISteamRemoteStorage",
+        "isteamremoteplay.h": "ISteamRemotePlay", "isteamremotestorage.h": "ISteamRemoteStorage",
         "isteamscreenshots.h": "ISteamScreenshots", "isteamtimeline.h": "ISteamTimeline",
         "isteamugc.h": "ISteamUGC", "isteamuser.h": "ISteamUser",
         "isteamuserstats.h": "ISteamUserStats", "isteamutils.h": "ISteamUtils",
         "isteamvideo.h": "ISteamVideo", "steam_api.h": "steam_api",
         "steam_gameserver.h": "steam_gameserver",
-        "steamnetworkingtypes.h": "steamnetworkingtypes",
-        "steamclientpublic.h": "steam_api",
+        "steamnetworkingtypes.h": "steamnetworkingtypes", "steamclientpublic.h": "steam_api",
     ];
     if (auto p = header in pages)
         return "https://partner.steamgames.com/doc/api/" ~ *p;
@@ -350,7 +343,7 @@ private string alignTypeOf(const CType t, const ref Ctx ctx)
 
 private string fieldDecl(const ref Field f, const ref Struct s, const ref Ctx ctx)
 {
-    string ty = ctx.d(f.type, Use.field);
+    const ty = ctx.d(f.type, Use.field);
     string decl = ty ~ " " ~ dIdent(f.name);
     // Zero-initialise char and floating point fields so that `T.init` is all
     // zero bytes, as value-initialisation is in C++.
@@ -370,14 +363,14 @@ private string fieldDecl(const ref Field f, const ref Struct s, const ref Ctx ct
 
 private void emitStruct(ref Code c, const ref Struct s, const ref Ctx ctx)
 {
-    string kind = s.callbackId >= 0 ? "Callback" : "Struct";
     string d = s.name ~ (s.header.length ? " (" ~ s.header ~ ")" : "") ~ ".";
     if (s.doc.length)
         d ~= " " ~ s.doc;
     if (s.callbackId >= 0)
         d ~= format!"\n\nCallback identifier %s."(s.callbackId);
-    d ~= "\n\nLayout: " ~ (s.pack.callback ? "VALVE_CALLBACK_PACK (4 on Linux, macOS and FreeBSD; 8 elsewhere)"
-            : s.pack.value ? format!"#pragma pack(%s)"(s.pack.value) : "natural alignment") ~ ".";
+    d ~= "\n\nLayout: " ~ (s.pack.callback
+            ? "VALVE_CALLBACK_PACK (4 on Linux, macOS and FreeBSD; 8 elsewhere)" : s.pack.value
+            ? format!"#pragma pack(%s)"(s.pack.value) : "natural alignment") ~ ".";
     if (s.jsonOnly)
         d ~= " Defined by steam_api.json only; the SDK headers just forward-declare it.";
     const page = docPage(s.header);
@@ -476,8 +469,8 @@ string emitInterfaces(const ref Model m, string sdk)
     foreach (ref i; m.interfaces)
     {
         if (i.versionString.length)
-            enforce(versionMacroFor(m, i.versionString).length,
-                    "no version macro for " ~ i.name ~ " " ~ i.versionString);
+            enforce(versionMacroFor(m, i.versionString).length, "no version macro for " ~ i.name ~ " " ~ i
+                    .versionString);
         const page = docPage(i.header);
         if (i.cppCallback)
         {
@@ -485,8 +478,8 @@ string emitInterfaces(const ref Model m, string sdk)
                     ~ "Derive an `extern (C++)` class from it and pass instances to ISteamMatchmakingServers. "
                     ~ "Steam keeps the pointer until the request completes or is cancelled, so the "
                     ~ "object must stay alive (and reachable by the GC) until then. Overrides must be "
-                    ~ "`nothrow`: exceptions cannot cross the Steam client.")(i.name, i.header)
-                    ~ (page.length ? "\n\nSee_Also: " ~ page ~ "#" ~ i.name : ""));
+                    ~ "`nothrow`: exceptions cannot cross the Steam client.")(i.name, i.header) ~ (page.length
+                    ? "\n\nSee_Also: " ~ page ~ "#" ~ i.name : ""));
             c.line("extern (C++) abstract class " ~ i.name);
             c.open();
             foreach (ref f; i.methods)
@@ -504,8 +497,7 @@ string emitInterfaces(const ref Model m, string sdk)
         {
             string d = format!"Opaque handle to the %s interface (%s)."(i.name, i.header);
             if (i.accessors.length)
-                d ~= " Obtain it with " ~ i.accessors.map!(a => "`SteamAPI_" ~ a.name ~ "()`")
-                    .join(" or ") ~ ".";
+                d ~= " Obtain it with " ~ i.accessors.map!(a => "`SteamAPI_" ~ a.name ~ "()`").join(" or ") ~ ".";
             if (i.versionString.length)
                 d ~= format!"\n\nInterface version: `%s`."(i.versionString);
             if (page.length)
@@ -628,8 +620,8 @@ string emitFunctionModule(const ref Model m, string sdk, string mod, const(Funct
         {
             c.line();
             c.doc(format!("Returns the %s interface (%s accessor); `null` before initialization.\n\n"
-                    ~ "Unversioned form of `%s`, matching the inline function in steam_api_flat.h.")(
-                    i.name, a.kind, a.flatName));
+                    ~ "Unversioned form of `%s`, matching the inline function in steam_api_flat.h.")(i.name,
+                    a.kind, a.flatName));
             c.line(format!"%s* SteamAPI_%s() nothrow @nogc"(i.name, a.name));
             c.open();
             c.line(format!"return %s();"(a.flatName));
@@ -699,7 +691,8 @@ string emitSymbols(const ref Model m, string sdk)
     c.line("/// `steamworksFunctionNames` order. With the dynamic loader an address is `null`");
     c.line("/// until bound; when linked, referencing every function makes the linker check");
     c.line("/// that the library provides all of them.");
-    c.line("void steamworksForEachFunction(scope void delegate(string name, void* address) nothrow @nogc dg) nothrow @nogc");
+    c.line("void steamworksForEachFunction(scope void delegate(string name, void* address) nothrow @nogc dg)");
+    c.line("    nothrow @nogc");
     c.open();
     c.line("version (SteamworksDynamic)");
     c.open();
@@ -741,8 +734,9 @@ string emitPackage(const ref Model m, string sdk)
     c.line("/// callback, interface and exported function of the SDK, with the C names.");
     c.line("module steamworks.raw;");
     c.line();
-    string[] mods = typeModules.dup ~ ["steamworks.raw.attributes", "steamworks.raw.helpers",
-        "steamworks.raw.symbols"];
+    string[] mods = typeModules.dup ~ [
+        "steamworks.raw.attributes", "steamworks.raw.helpers", "steamworks.raw.symbols"
+    ];
     foreach (mod; functionModules(m))
         mods ~= "steamworks.raw." ~ mod;
     mods.sort();
@@ -811,7 +805,8 @@ unittest
     auto o = generate(m, "test");
     const fns = o["source/steamworks/raw/isteamx.d"];
     // Linked declaration with its call-result UDA and explicit self.
-    assert(fns.canFind("@SteamCallResult!(Cb_t)() SteamAPICall_t SteamAPI_ISteamX_Find(ISteamX* self, uint64_steamid id);"));
+    assert(fns.canFind(
+            "@SteamCallResult!(Cb_t)() SteamAPICall_t " ~ "SteamAPI_ISteamX_Find(ISteamX* self, uint64_steamid id);"));
     // Dynamic pointer type and variable.
     assert(fns.canFind("alias PFN_SteamAPI_ISteamX_Find = SteamAPICall_t function(ISteamX* self, uint64_steamid id);"));
     assert(fns.canFind("PFN_SteamAPI_ISteamX_Find SteamAPI_ISteamX_Find;"));

@@ -53,12 +53,10 @@ private string cppQual(string dQual) @safe pure
     return dQual.replace(".", "::");
 }
 
-private void layoutEntries(ref Entry[] es, string cname, string dname, const string[] fields,
-        bool isClass = false)
+private void layoutEntries(ref Entry[] es, string cname, string dname, const string[] fields, bool isClass = false)
 {
     if (isClass)
-        es ~= Entry("sizeof " ~ cname, "sizeof(" ~ cname ~ ")",
-                "__traits(classInstanceSize, " ~ dname ~ ")");
+        es ~= Entry("sizeof " ~ cname, "sizeof(" ~ cname ~ ")", "__traits(classInstanceSize, " ~ dname ~ ")");
     else
     {
         es ~= Entry("sizeof " ~ cname, "sizeof(" ~ cname ~ ")", dname ~ ".sizeof");
@@ -91,11 +89,9 @@ Entry[] probeEntries(const ref Model m)
                 fs ~= f.name;
             layoutEntries(es, s.name, s.name, fs);
             if (s.callbackId >= 0)
-                es ~= Entry(s.name ~ "::k_iCallback", "(long long)" ~ s.name ~ "::k_iCallback",
-                        s.name ~ ".k_iCallback");
+                es ~= Entry(s.name ~ "::k_iCallback", "(long long)" ~ s.name ~ "::k_iCallback", s.name ~ ".k_iCallback");
             foreach (ref k; s.consts)
-                es ~= Entry(s.name ~ "::" ~ k.name, "(long long)" ~ s.name ~ "::" ~ k.name,
-                        s.name ~ "." ~ k.name);
+                es ~= Entry(s.name ~ "::" ~ k.name, "(long long)" ~ s.name ~ "::" ~ k.name, s.name ~ "." ~ k.name);
             foreach (ref e; s.enums)
                 foreach (ref v; e.values)
                     es ~= Entry(s.name ~ "::" ~ v.name, "(long long)" ~ s.name ~ "::" ~ v.name,
@@ -104,8 +100,7 @@ Entry[] probeEntries(const ref Model m)
     auto manual = m.manualProbe.keys;
     manual.sort();
     foreach (cname; manual)
-        layoutEntries(es, cname, cname.replace("::", "."), m.manualProbe[cname],
-                cname == "CCallbackBase");
+        layoutEntries(es, cname, cname.replace("::", "."), m.manualProbe[cname], cname == "CCallbackBase");
     foreach (ref e; m.enums)
     {
         es ~= Entry("sizeof " ~ e.cname, "sizeof(" ~ e.cname ~ ")", e.name ~ ".sizeof");
@@ -131,8 +126,7 @@ Entry[] probeEntries(const ref Model m)
         if (k.jsonOnly)
             continue;
         if (k.type.base == "float" || k.type.base == "double")
-            es ~= Entry(k.name ~ " * 1000", "(long long)(" ~ k.name ~ " * 1000)",
-                    "cast(long)(" ~ k.name ~ " * 1000)");
+            es ~= Entry(k.name ~ " * 1000", "(long long)(" ~ k.name ~ " * 1000)", "cast(long)(" ~ k.name ~ " * 1000)");
         else
             es ~= Entry(k.name, "(long long)(" ~ k.name ~ ")", k.name);
     }
@@ -220,8 +214,8 @@ string runProbe(const ref Model m, string sdk, string clang, string includeDir, 
             ~ "void *memset(void *, int, size_t);\nvoid *memcpy(void *, const void *, size_t);\n"
             ~ "int memcmp(const void *, const void *, size_t);\nsize_t strlen(const char *);\n"
             ~ "char *strncpy(char *, const char *, size_t);\n");
-    write(buildPath(stub, "stdio.h"), "#pragma once\n#include <stddef.h>\n"
-            ~ "int snprintf(char *, size_t, const char *, ...);\n");
+    write(buildPath(stub, "stdio.h"),
+            "#pragma once\n#include <stddef.h>\n" ~ "int snprintf(char *, size_t, const char *, ...);\n");
     const probe = buildPath(abiDir, "probe.cpp");
     write(probe, emitProbeCpp(m, sdk));
 
@@ -229,8 +223,8 @@ string runProbe(const ref Model m, string sdk, string clang, string includeDir, 
     foreach (t; targets)
     {
         auto r = execute([
-            clang, "-target", t.clang, "-std=c++17", "-ffreestanding", "-nostdinc++",
-            "-isystem", stub, "-I", includeDir, "-S", "-emit-llvm", "-o", "-", probe
+            clang, "-target", t.clang, "-std=c++17", "-ffreestanding", "-nostdinc++", "-isystem",
+            stub, "-I", includeDir, "-S", "-emit-llvm", "-o", "-", probe
         ]);
         enforce(r.status == 0, "clang failed for " ~ t.clang ~ ":\n" ~ r.output);
         results ~= parseLayout(r.output, es.length + 1, t.clang);
@@ -315,8 +309,7 @@ long[] parseLayout(string ir, size_t expected, string target)
     long[] vals;
     foreach (c; mm[2].matchAll(ctRegex!(`i64 (-?\d+)`)))
         vals ~= c[1].to!long;
-    enforce(vals.length == expected, format!"%s: expected %s layout values, got %s"(target,
-            expected, vals.length));
+    enforce(vals.length == expected, format!"%s: expected %s layout values, got %s"(target, expected, vals.length));
     return vals;
 }
 
@@ -331,7 +324,7 @@ unittest
     import std.algorithm : any;
 
     auto m = buildModel(fixtureApi, fixtureOverrides, fixtureHeaders);
-    auto es = probeEntries(m);
+    const es = probeEntries(m);
     assert(es.any!(e => e.key == "Cb_t::k_iCallback" && e.d == "Cb_t.k_iCallback"));
     assert(es.any!(e => e.key == "offsetof Cb_t::m_id" && e.cpp == "offsetof(Cb_t, m_id)"));
     // Unsigned enums compare as unsigned on every compiler.
@@ -347,7 +340,8 @@ unittest
     auto m = buildModel(fixtureApi, fixtureOverrides, fixtureHeaders);
     const cpp = emitProbeCpp(m, "test");
     assert(cpp.canFind(`static_assert(sw_streq(STEAMX_INTERFACE_VERSION, "SteamX001"), "STEAMX_INTERFACE_VERSION");`));
-    assert(cpp.canFind("static_assert(sw_same<decltype(&SteamAPI_ISteamX_Find), SteamAPICall_t (*)(ISteamX *, uint64_steamid)>::value"));
+    assert(cpp.canFind("static_assert(sw_same<decltype(&SteamAPI_ISteamX_Find), "
+            ~ "SteamAPICall_t (*)(ISteamX *, uint64_steamid)>::value"));
     assert(cpp.canFind("1364716109LL\n};"));
 }
 

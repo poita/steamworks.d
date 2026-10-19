@@ -28,8 +28,8 @@ private string str(const(char)* s)
 int main(string[] args)
 {
     string library;
-    auto help = getopt(args, "library", "Steamworks library to load (dynamic build; default: next to the executable)",
-            &library);
+    auto help = getopt(args, "library",
+            "Steamworks library to load (dynamic build; default: next to the executable)", &library);
     if (help.helpWanted)
     {
         defaultGetoptPrinter("Usage: smoke [--library <path>]", help.options);
@@ -108,10 +108,7 @@ version (SteamworksDynamic) version (Windows) private void checkUnboundExports(s
 private void checkEveryFunctionResolves()
 {
     size_t total, resolved;
-    steamworksForEachFunction((string, void* p) nothrow @nogc {
-        ++total;
-        resolved += p !is null;
-    });
+    steamworksForEachFunction((string, void* p) nothrow @nogc { ++total; resolved += p !is null; });
     check(total == steamworksFunctionCount, "function count");
     check(resolved == total, "every function resolves");
     writefln("%s of %s functions resolved", resolved, total);
@@ -145,8 +142,8 @@ private void checkStructHelpers()
     SteamAPI_servernetadr_t_Assign(&b, a);
     check(b.m_unIP == 0x0102_0304 && b.m_usQueryPort == 27_016, "servernetadr_t Assign");
     SteamAPI_servernetadr_t_SetQueryPort(&b, 27_017);
-    check(SteamAPI_servernetadr_t_IsLessThan(&a, b) && !SteamAPI_servernetadr_t_IsLessThan(&b, a),
-            "servernetadr_t IsLessThan");
+    check(SteamAPI_servernetadr_t_IsLessThan(&a, b) && !SteamAPI_servernetadr_t_IsLessThan(&b,
+            a), "servernetadr_t IsLessThan");
 
     gameserveritem_t item;
     SteamAPI_gameserveritem_t_Construct(&item);
@@ -166,8 +163,8 @@ private void checkStructHelpers()
 
     SteamNetworkingIPAddr addr;
     SteamAPI_SteamNetworkingIPAddr_SetIPv4(&addr, 0x7f00_0001, 4_242);
-    check(SteamAPI_SteamNetworkingIPAddr_IsIPv4(&addr) && SteamAPI_SteamNetworkingIPAddr_IsLocalHost(&addr),
-            "SteamNetworkingIPAddr IPv4 localhost");
+    check(SteamAPI_SteamNetworkingIPAddr_IsIPv4(&addr)
+            && SteamAPI_SteamNetworkingIPAddr_IsLocalHost(&addr), "SteamNetworkingIPAddr IPv4 localhost");
     check(SteamAPI_SteamNetworkingIPAddr_GetIPv4(&addr) == 0x7f00_0001 && addr.m_port == 4_242,
             "SteamNetworkingIPAddr GetIPv4");
     SteamNetworkingIPAddr addr2;

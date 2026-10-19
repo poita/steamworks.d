@@ -21,18 +21,20 @@ enum SteamworksLoadStatus
     missingSymbols,
 }
 
-/// File name of the Steamworks library on this platform.
 version (Windows)
 {
     version (Win64)
-        enum string steamworksLibraryName = "steam_api64.dll";
+        private enum string libraryName = "steam_api64.dll";
     else
-        enum string steamworksLibraryName = "steam_api.dll";
+        private enum string libraryName = "steam_api.dll";
 }
 else version (OSX)
-    enum string steamworksLibraryName = "libsteam_api.dylib";
+    private enum string libraryName = "libsteam_api.dylib";
 else
-    enum string steamworksLibraryName = "libsteam_api.so";
+    private enum string libraryName = "libsteam_api.so";
+
+/// File name of the Steamworks library on this platform.
+enum string steamworksLibraryName = libraryName;
 
 version (SteamworksDynamic)
 {
@@ -54,7 +56,8 @@ version (SteamworksDynamic)
 
     private __gshared SteamworksLoadStatus lastStatus = SteamworksLoadStatus.libraryNotFound;
     private __gshared size_t missingCount;
-    private __gshared char[512] errorBuffer = 0;
+    private enum size_t errorCapacity = 512;
+    private __gshared char[errorCapacity] errorBuffer = 0;
     private __gshared size_t errorLength;
 
     /// Loads the Steamworks library and binds every function.
@@ -111,10 +114,7 @@ version (SteamworksDynamic)
     {
         if (!handle)
             return;
-        bindSteamworksSymbols((void** slot, const(char)*) nothrow @nogc {
-            *slot = null;
-            return true;
-        });
+        bindSteamworksSymbols((void** slot, const(char)*) nothrow @nogc { *slot = null; return true; });
         version (Windows)
             FreeLibrary(handle);
         else
@@ -171,9 +171,10 @@ version (SteamworksDynamic)
         {
             import core.stdc.stdio : snprintf;
 
-            const n = snprintf(errorBuffer.ptr, errorBuffer.length, "LoadLibrary failed (error %lu)",
-                    cast(uint) GetLastError());
-            errorLength = n < 0 ? 0 : n < errorBuffer.length ? n : errorBuffer.length - 1;
+            const n = snprintf(errorBuffer.ptr, errorBuffer.length,
+                    "LoadLibrary failed (error %lu)", cast(uint) GetLastError());
+            // snprintf returns the untruncated length and always terminates.
+            errorLength = n < 0 ? 0 : n < errorCapacity ? n : errorCapacity - 1;
         }
         else
         {
@@ -217,19 +218,18 @@ version (SteamworksDynamic)
         return buf.ptr;
     }
 
-    version (OSX)
-        private extern (C) int _NSGetExecutablePath(char* buf, uint* bufsize) nothrow @nogc;
+    version (OSX) private extern (C) int _NSGetExecutablePath(char* buf, uint* bufsize) nothrow @nogc;
 }
 else
 {
     /// The library is linked: always succeeds.
-    SteamworksLoadStatus loadSteamworks(const(char)* libraryPath = null) nothrow @nogc
+    SteamworksLoadStatus loadSteamworks(const(char)*  = null) nothrow @nogc
     {
         return SteamworksLoadStatus.success;
     }
 
     /// ditto
-    SteamworksLoadStatus loadSteamworks(string libraryPath) nothrow @nogc
+    SteamworksLoadStatus loadSteamworks(string) nothrow @nogc
     {
         return SteamworksLoadStatus.success;
     }

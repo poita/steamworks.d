@@ -218,7 +218,8 @@ private Function parseMethod(const JSONValue m, string owner, string header)
 
 private Const parseConst(const JSONValue c, string header)
 {
-    return Const(c.field("constname"), parseCType(c.field("consttype")), c.field("constval"), c.field("header", header));
+    return Const(c.field("constname"), parseCType(c.field("consttype")), c.field("constval"),
+            c.field("header", header));
 }
 
 private Enum parseEnum(const JSONValue e, string header)
@@ -296,8 +297,8 @@ Model buildModel(const JSONValue api, const JSONValue ovr, HeaderInfo hdr)
         m.typedefs ~= td;
     }
     foreach (t; ovr["extraTypedefs"].array)
-        m.typedefs ~= Typedef(t.field("typedef", t.field("name")), parseCType(t.field("type")), null,
-                t.field("doc"), t.field("header"));
+        m.typedefs ~= Typedef(t.field("typedef", t.field("name")), parseCType(t.field("type")),
+                null, t.field("doc"), t.field("header"));
 
     // Constants.
     bool[string] jsonOnlyConsts;
@@ -371,6 +372,7 @@ Model buildModel(const JSONValue api, const JSONValue ovr, HeaderInfo hdr)
                 st.consts ~= parseConst(c, st.header);
         return st;
     }
+
     foreach (s; api["structs"].array)
     {
         const name = s.field("struct");
@@ -413,8 +415,8 @@ Model buildModel(const JSONValue api, const JSONValue ovr, HeaderInfo hdr)
             fn.name = a.flatName;
             fn.ret = parseCType(itf.name ~ " *");
             fn.header = itf.header;
-            fn.doc = format!"Returns the %s interface (versioned %s accessor exported by the library)."(
-                    itf.name, a.kind);
+            fn.doc = format!"Returns the %s interface (versioned %s accessor exported by the library)."(itf.name,
+                    a.kind);
             itf.methods ~= fn;
         }
         m.interfaces ~= itf;
@@ -481,7 +483,8 @@ version (unittest)
             "callback_structs": [ { "struct": "Cb_t", "callback_id": 101,
                                     "fields": [ { "fieldname": "m_id", "fieldtype": "CSteamID" } ] } ],
             "interfaces": [ { "classname": "ISteamX", "version_string": "SteamX001", "fields": [],
-                              "accessors": [ { "kind": "user", "name": "SteamX", "name_flat": "SteamAPI_SteamX_v001" } ],
+                              "accessors": [ { "kind": "user", "name": "SteamX",
+                                               "name_flat": "SteamAPI_SteamX_v001" } ],
                               "methods": [ { "methodname": "Find", "methodname_flat": "SteamAPI_ISteamX_Find",
                                              "callresult": "Cb_t", "returntype": "SteamAPICall_t",
                                              "params": [ { "paramname": "id", "paramtype": "CSteamID",

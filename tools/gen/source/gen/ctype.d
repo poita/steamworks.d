@@ -162,8 +162,8 @@ string[] splitTopLevel(string s) @safe pure
 private string stripParamName(string p) @safe
 {
     static immutable typeWords = [
-        "const", "unsigned", "signed", "char", "short", "int", "long", "float",
-        "double", "void", "bool"
+        "const", "unsigned", "signed", "char", "short", "int", "long", "float", "double", "void",
+        "bool"
     ];
     enum nameRe = ctRegex!(`^(.*?[\s\*&])([A-Za-z_]\w*)$`);
     auto m = p.matchFirst(nameRe);
@@ -266,15 +266,14 @@ string toD(const CType t, scope const string[string] typeMap, Use use = Use.valu
         string[] ps;
         foreach (p; t.fnParams)
             ps ~= toD(p, typeMap, Use.param, classTypes);
-        return "extern (C) " ~ toD(*t.fnReturn, typeMap, Use.value, classTypes) ~ " function(" ~ ps.join(
-                ", ") ~ ") nothrow";
+        return "extern (C) " ~ toD(*t.fnReturn, typeMap, Use.value,
+                classTypes) ~ " function(" ~ ps.join(", ") ~ ") nothrow";
     }
     string s = dBase(t.base, typeMap);
     const(bool)[] ptrs = t.ptrs;
     if (t.base in classTypes)
     {
-        enforce(ptrs.length && !t.isRef && !t.dims.length,
-                "class type " ~ t.base ~ " must be used through a pointer");
+        enforce(ptrs.length && !t.isRef && !t.dims.length, "class type " ~ t.base ~ " must be used through a pointer");
         // A const object pointer has no class-reference equivalent; the
         // C++ callback interfaces are never passed const.
         enforce(!t.baseConst, "const class type " ~ t.base);
