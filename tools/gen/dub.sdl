@@ -1,0 +1,5 @@
+name "steamworks-gen"
+description "Generates the steamworks.raw bindings from the Steamworks SDK"
+license "BSL-1.0"
+targetType "executable"
+targetPath "bin"

@@ -1,0 +1,25 @@
+name "steamworks"
+description "Complete D bindings for the Steamworks SDK flat C API, with a thin D layer"
+homepage "https://github.com/Poita/steamworks.d"
+authors "Peter Alexander"
+copyright "Copyright © 2026, Peter Alexander"
+license "BSL-1.0"
+targetType "library"
+sourcePaths "source"
+importPaths "source"
+
+// Loads libsteam_api at runtime with loadSteamworks(); nothing to link.
+configuration "dynamic" {
+	versions "SteamworksDynamic"
+	libs "dl" platform="linux"
+}
+
+// Links libsteam_api directly. Add the directory holding the library for
+// your platform to the linker search path (lflags "-L<dir>" on Linux and
+// macOS, "/LIBPATH:<dir>" on Windows) and ship the library next to the
+// executable.
+configuration "linked" {
+	libs "steam_api" platform="posix"
+	libs "steam_api64" platform="windows-x86_64"
+	libs "steam_api" platform="windows-x86"
+}

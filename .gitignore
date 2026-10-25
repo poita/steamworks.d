@@ -16,3 +16,11 @@ docs.json
 __dummy.html
 *.lst
 steam_appid.txt
+/tools/gen/bin/
+/tools/gen/.dub/
+/tools/gen/steamworks-gen-test-*
+/tests/*/bin/
+/tests/*/.dub/
+/.abi-check.log
+/examples/*/bin/
+/examples/*/.dub/
