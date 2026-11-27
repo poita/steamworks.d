@@ -43,7 +43,7 @@ for s in $steps; do
             dub build -q --root=tools/gen
             case " ${DCS:-dmd ldc2} " in
                 *" dmd "*) run verify tools/gen/bin/steamworks-gen --verify ;;
-                *) run verify tools/gen/bin/steamworks-gen --verify --dmd= ;;
+                *) run verify tools/gen/bin/steamworks-gen --verify --dmd '' ;;
             esac ;;
         exports) run exports tests/exports/check.sh ;;
         cabi) run cabi tests/cabi/run.sh ;;

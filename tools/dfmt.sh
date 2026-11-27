@@ -18,6 +18,6 @@ done
 dub fetch -q "dfmt@$DFMT_VERSION" >/dev/null 2>&1 || true
 dub build -q "dfmt@$DFMT_VERSION" --compiler="${DC:-ldc2}" >&2
 packages="${DUB_HOME:-$HOME/.dub}/packages/dfmt"
-path="$(find "$packages" -path "*$DFMT_VERSION*" -type f \( -name dfmt -o -name dfmt.exe \) | head -n 1)"
+path="$(find "$packages" -path "*$DFMT_VERSION*" -type f -perm -u+x \( -name dfmt -o -name dfmt.exe \) | head -n 1)"
 [ -n "$path" ] || { echo "cannot build dfmt $DFMT_VERSION" >&2; exit 1; }
 echo "$path"

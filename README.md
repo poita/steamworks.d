@@ -297,7 +297,8 @@ directory.
 - **Windows.** Ship `steam_api64.dll` (or `steam_api.dll` for 32-bit) next to the executable;
   `loadSteamworks()` looks there first, then on the standard DLL search path. The linked
   configuration links the import library `steam_api64.lib`; add its directory with
-  `lflags "/LIBPATH:..."` or the `LIB` environment variable. C++ callback interfaces follow MSVC's
+  `lflags "/LIBPATH:..."` or `LINK=/LIBPATH:...` in the environment (dmd's `sc.ini` replaces
+  `LIB`, so `LIB` works with LDC only). C++ callback interfaces follow MSVC's
   vtable order, which the D compilers reproduce for `extern (C++)` classes.
 - **macOS.** `libsteam_api.dylib` is universal (arm64 and x86_64). Its install name is
   `@loader_path/libsteam_api.dylib`, so a linked executable finds it next to itself; inside an
@@ -469,7 +470,8 @@ unit tests drive it with a fake `CallbackSource`.
 ### Continuous integration
 
 `.github/workflows/ci.yml` runs the unit tests in both configurations, the smoke and D-layer
-tests, and builds every example on Linux, macOS and Windows with the latest dmd and LDC; the full
+tests, and builds every example on Linux and Windows with the latest dmd and LDC and on macOS with
+LDC (dmd's macOS Phobos archive does not link with the current Xcode linker); the full
 ABI verification on macOS (whose LLVM tools read every platform's binaries); the native ABI checks
 on Linux with both compilers; and the format and lint checks. It downloads the SDK with
 `tools/fetch-sdk.sh`.

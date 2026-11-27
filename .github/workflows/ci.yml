@@ -23,12 +23,18 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
         dc: [dmd-latest, ldc-latest]
+        # dmd is x86_64-only on macOS and its libphobos2.a has Mach-O archive
+        # members that are not 8-byte aligned, which the current Xcode linker
+        # rejects. LDC covers macOS natively.
+        exclude:
+          - os: macos-latest
+            dc: dmd-latest
     runs-on: ${{ matrix.os }}
     defaults:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: dlang-community/setup-dlang@v2
         with:
@@ -38,9 +44,10 @@ jobs:
         run: tools/fetch-sdk.sh
 
       # The linked configuration needs the library at link time (LIBRARY_PATH,
-      # or LIB for the MSVC linker) and at run time (the loader's search
-      # path). Test executables built in the repository root are not next to
-      # the library, so the loader path points at the SDK.
+      # or the LINK options variable for the MSVC linker, since dmd's sc.ini
+      # replaces LIB) and at run time (the loader's search path). Test
+      # executables built in the repository root are not next to the library,
+      # so the loader path points at the SDK.
       - name: Point the linker and loader at the SDK's library
         run: |
           case "$RUNNER_OS" in
@@ -56,7 +63,7 @@ jobs:
               ;;
             Windows)
               lib="$(cygpath -w "$PWD/sdk/redistributable_bin/win64")"
-              echo "LIB=$lib${LIB:+;$LIB}" >> "$GITHUB_ENV"
+              echo "LINK=/LIBPATH:\"$lib\"${LINK:+ $LINK}" >> "$GITHUB_ENV"
               echo "$lib" >> "$GITHUB_PATH"
               echo "DUB_ARCH=--arch=x86_64" >> "$GITHUB_ENV"
               ;;
@@ -96,7 +103,7 @@ jobs:
     name: ABI (macOS, every target)
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: dlang-community/setup-dlang@v2
         with:
@@ -123,7 +130,7 @@ jobs:
     name: ABI (Linux x86_64)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: dlang-community/setup-dlang@v2
         with:
@@ -146,7 +153,7 @@ jobs:
     name: format and lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: dlang-community/setup-dlang@v2
         with:
