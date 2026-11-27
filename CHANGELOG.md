@@ -8,6 +8,10 @@ it removes or changes existing declarations).
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-11-27
+
+The first release, generated from Steamworks SDK 1.65.
+
 ### Added
 
 - Complete bindings to the Steamworks SDK 1.65 flat C API (`steamworks.raw`): all 1057 functions
@@ -59,4 +63,5 @@ it removes or changes existing declarations).
 - `tools/fetch-sdk.sh` fetches SDK 1.65 from a pinned steamworks-rs commit and verifies the
   extracted files; `STEAMWORKS_SDK_VERSION=1.64` keeps the crates.io copy of 1.64.
 
-[Unreleased]: https://github.com/Poita/steamworks.d/commits/dev
+[Unreleased]: https://github.com/Poita/steamworks.d/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/Poita/steamworks.d/releases/tag/v0.1.0
